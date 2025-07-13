@@ -330,3 +330,25 @@ export function is_transitive(relation: boolean[][]) {
 export function is_equivalence(relation: boolean[][]) {
     return is_reflexive(relation) && is_symmetric(relation) && is_transitive(relation)
 }
+
+export function cartesian_product(inputs: any[][]): any[][] {
+    let all_combinations: any[][] = []
+    let l: any[] = []
+    cartesian_helper(inputs, l, all_combinations)
+    console.log(all_combinations)
+    return all_combinations;
+}
+
+function cartesian_helper(inputs: any[][], l: any[], all_combinations: any[][]) {
+    let index: number = l.length;
+    let number_of_sets: number = inputs.length;
+    if (number_of_sets == index) {
+        all_combinations.push(Array.from(l));
+        return;
+    }
+    for (let element of inputs[index]) {
+        l.push(element)
+        cartesian_helper(inputs, l, all_combinations)
+        l.pop()
+    }
+}

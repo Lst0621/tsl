@@ -297,3 +297,23 @@ export function is_transitive(relation) {
 export function is_equivalence(relation) {
     return is_reflexive(relation) && is_symmetric(relation) && is_transitive(relation);
 }
+export function cartesian_product(inputs) {
+    let all_combinations = [];
+    let l = [];
+    cartesian_helper(inputs, l, all_combinations);
+    console.log(all_combinations);
+    return all_combinations;
+}
+function cartesian_helper(inputs, l, all_combinations) {
+    let index = l.length;
+    let number_of_sets = inputs.length;
+    if (number_of_sets == index) {
+        all_combinations.push(Array.from(l));
+        return;
+    }
+    for (let element of inputs[index]) {
+        l.push(element);
+        cartesian_helper(inputs, l, all_combinations);
+        l.pop();
+    }
+}
