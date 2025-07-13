@@ -299,9 +299,7 @@ export function is_equivalence(relation) {
 }
 export function cartesian_product(inputs) {
     let all_combinations = [];
-    let l = [];
-    cartesian_helper(inputs, l, all_combinations);
-    console.log(all_combinations);
+    cartesian_helper(inputs, [], all_combinations);
     return all_combinations;
 }
 function cartesian_helper(inputs, l, all_combinations) {
