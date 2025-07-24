@@ -284,10 +284,8 @@ function next_permutation_in_place(nums: number[]): void {
 }
 
 export function get_all_dihedral(n: number): number[][] {
-    let gen: number[][] = generate_group([[1, 0]], (a: number[], b: number[]) => dihedral_multiply(a, b, n), array_eq, 0)
-    gen.push([0, 1])
-    let ans = generate_group(gen, (a: number[], b: number[]) => dihedral_multiply(a, b, n), array_eq, 0)
-    return ans
+    return generate_group([[1, 0], [0, 1]], (a: number[], b: number[]) => dihedral_multiply(a, b, n), array_eq, 0).sort(
+        (a, b) => ((a[1] == b[1]) ? a[0] - b[0] : a[1] - b[1]))
 }
 
 export function dihedral_multiply(a: number[], b: number[], n: number) {
