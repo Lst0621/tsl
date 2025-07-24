@@ -28,6 +28,14 @@ export function gcd(a_in: number, b_in: number): number {
     }
 }
 
+export function multiply_mod_n(a: number, b: number, n: number): number {
+    return a * b % n;
+}
+
+export function get_multiply_mod_n_function(n: number) {
+    return (a: number, b: number) => multiply_mod_n(a, b, n)
+}
+
 export function are_co_prime(a: number, b: number): boolean {
     return gcd(a, b) == 1
 }
@@ -42,23 +50,61 @@ export function totient(n: number): number {
     return ans
 }
 
+export function pad_permutations(p1: number[], p2: number[]) {
+    let l1 = p1.length;
+    let l2 = p2.length;
+    let l = Math.max(l1, l2);
+    let p1_copy = Array.from(p1)
+    let p2_copy = Array.from(p2)
+
+    // fill
+    for (let i = l1 + 1; i <= l; i++) {
+        p1_copy.push(i)
+    }
+    for (let i = l2 + 1; i <= l; i++) {
+        p2_copy.push(i)
+    }
+    return [p1_copy, p2_copy]
+}
+
+export function array_eq(a: number[], b: number[]): boolean {
+    let len_a: number = a.length;
+    let len_b: number = b.length;
+    if (len_a != len_b) {
+        return false;
+    }
+    for (let i = 0; i < len_a; i++) {
+        if (a[i] != b[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function permutation_eq(p1: number[], p2: number[]) {
+    let l1 = p1.length;
+    let l2 = p2.length;
+    let l = Math.max(l1, l2);
+
+    let padded = pad_permutations(p1, p2)
+    let p1_copy = padded[0]
+    let p2_copy = padded[1]
+    return array_eq(p1_copy, p2_copy)
+}
+
 export function permutation_multiply(p1: number[], p2: number[]): number[] {
     let l1 = p1.length;
     let l2 = p2.length;
     let l = Math.max(l1, l2);
 
-    // fill
-    for (let i = l1 + 1; i <= l; i++) {
-        p1.push(i)
-    }
-    for (let i = l2 + 1; i <= l; i++) {
-        p2.push(i)
-    }
+    let padded = pad_permutations(p1, p2)
+    let p1_copy = padded[0]
+    let p2_copy = padded[1]
 
     let ans: number[] = []
     for (let i = 1; i <= l; i++) {
-        let p2_i = p2[i - 1]
-        let p1_p2_i: number = p1[p2_i - 1]
+        let p2_i = p2_copy[i - 1]
+        let p1_p2_i: number = p1_copy[p2_i - 1]
         ans.push(p1_p2_i)
     }
     return ans
@@ -237,14 +283,10 @@ function next_permutation_in_place(nums: number[]): void {
     }
 }
 
-export function get_all_dihedral(n: number) {
-    let ans: number[][] = []
-    for (let i = 0; i < n; i++) {
-        ans.push([i, 0])
-    }
-    for (let i = 0; i < n; i++) {
-        ans.push([i, 1])
-    }
+export function get_all_dihedral(n: number): number[][] {
+    let gen: number[][] = generate_group([[1, 0]], (a: number[], b: number[]) => dihedral_multiply(a, b, n), array_eq, 0)
+    gen.push([0, 1])
+    let ans = generate_group(gen, (a: number[], b: number[]) => dihedral_multiply(a, b, n), array_eq, 0)
     return ans
 }
 
@@ -258,7 +300,33 @@ export function dihedral_multiply(a: number[], b: number[], n: number) {
     } else {
         return [(r_a + n - r_b) % n, 1 - s_b]
     }
+}
 
+export function dihedral_to_permutation(dihedral: number[], n: number) {
+    let perm: number[] = []
+    let r: number[] = []
+    for (let i = 2; i <= n; i++) {
+        r.push(i)
+    }
+    r.push(1)
+
+    for (let i = 0; i < dihedral[0]; i++) {
+        perm = permutation_multiply(perm, r)
+    }
+
+    if (dihedral[1] == 1) {
+        let s: number[] = []
+        for (let i = 1; i <= n; i++) {
+            if (i == 1) {
+                s.push(i);
+            } else {
+                s.push(n + 2 - i)
+            }
+        }
+        perm = permutation_multiply(perm, s)
+    }
+
+    return perm
 }
 
 export function dihedral_to_str(a: number[]) {
@@ -349,4 +417,45 @@ function cartesian_helper<T>(inputs: T[][], l: T[], all_combinations: T[][]) {
         cartesian_helper(inputs, l, all_combinations)
         l.pop()
     }
+}
+
+export function generate_group<T>(generators: T[],
+                                  multiply: (a: T, b: T) => T,
+                                  eq: (a: T, b: T) => boolean,
+                                  limit: number): T[] {
+    let ret: T[] = Array.from(generators)
+    let last_length: number = 0
+    let current_length: number = ret.length
+    console.log("generating elements of the group, size from " + last_length + " to " + current_length)
+    while (last_length < current_length) {
+        for (let i = 0; i < current_length; i++) {
+            for (let j = last_length; j < current_length; j++) {
+                let product_ij = multiply(ret[i], ret[j])
+                if (!ret.some(ele => eq(ele, product_ij))) {
+                    console.log("adding " + ret[i] + " " + ret[j])
+                    ret.push(product_ij)
+                }
+            }
+        }
+
+        for (let i = 0; i < current_length; i++) {
+            for (let j = last_length; j < current_length; j++) {
+                let product_ji = multiply(ret[j], ret[i])
+                if (!ret.some(ele => eq(ele, product_ji))) {
+                    console.log("adding " + ret[j] + " " + ret[i])
+                    ret.push(product_ji)
+                }
+            }
+        }
+
+
+        last_length = current_length
+        current_length = ret.length
+        console.log("generating elements of the group, size from " + last_length + " to " + current_length)
+        if (limit > 0 && current_length > limit) {
+            break;
+        }
+    }
+
+    return ret
 }
