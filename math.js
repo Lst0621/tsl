@@ -41,6 +41,30 @@ export function totient(n) {
     }
     return ans;
 }
+export function get_u_n(n) {
+    let u = [];
+    for (let i = 1; i <= n; i++) {
+        if (are_co_prime(i, n)) {
+            u.push(i);
+        }
+    }
+    return u;
+}
+export function get_primitive_roots(n) {
+    if (n == 1) {
+        return [1];
+    }
+    let u = get_u_n(n);
+    let ret = [];
+    for (let i = 0; i <= u.length; i++) {
+        let a = u[i];
+        let g = generate_group([a], get_multiply_mod_n_function(n), (a, b) => a == b, n);
+        if (g.length == u.length) {
+            ret.push(a);
+        }
+    }
+    return ret;
+}
 export function pad_permutations(p1, p2) {
     let l1 = p1.length;
     let l2 = p2.length;
