@@ -56,7 +56,7 @@ export function get_primitive_roots(n) {
     }
     let u = get_u_n(n);
     let ret = [];
-    for (let i = 0; i <= u.length; i++) {
+    for (let i = 0; i < u.length; i++) {
         let a = u[i];
         let g = generate_group([a], get_multiply_mod_n_function(n), (a, b) => a == b, n);
         if (g.length == u.length) {
@@ -405,7 +405,7 @@ export function generate_group(generators, multiply, eq, limit) {
             for (let j = last_length; j < current_length; j++) {
                 let product_ij = multiply(ret[i], ret[j]);
                 if (!ret.some(ele => eq(ele, product_ij))) {
-                    console.log("adding " + ret[i] + " " + ret[j]);
+                    console.log("adding " + i + ":" + ret[i] + " " + j + ":" + ret[j] + " " + product_ij);
                     ret.push(product_ij);
                 }
             }
@@ -414,7 +414,7 @@ export function generate_group(generators, multiply, eq, limit) {
             for (let j = last_length; j < current_length; j++) {
                 let product_ji = multiply(ret[j], ret[i]);
                 if (!ret.some(ele => eq(ele, product_ji))) {
-                    console.log("adding " + ret[j] + " " + ret[i]);
+                    console.log("adding " + j + ":" + ret[j] + " " + i + ":" + ret[i] + " " + product_ji);
                     ret.push(product_ji);
                 }
             }
