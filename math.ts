@@ -93,7 +93,7 @@ export function pad_permutations(p1: number[], p2: number[]) {
     return [p1_copy, p2_copy]
 }
 
-export function array_eq(a: number[], b: number[]): boolean {
+export function array_eq<T>(a: T[], b: T[]): boolean {
     let len_a: number = a.length;
     let len_b: number = b.length;
     if (len_a != len_b) {
@@ -101,6 +101,20 @@ export function array_eq(a: number[], b: number[]): boolean {
     }
     for (let i = 0; i < len_a; i++) {
         if (a[i] != b[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function array_eq_2d<T>(a: T[][], b: T[][]): boolean {
+    let len_a: number = a.length;
+    let len_b: number = b.length;
+    if (len_a != len_b) {
+        return false;
+    }
+    for (let i = 0; i < len_a; i++) {
+        if (!array_eq(a[i], b[i])) {
             return false;
         }
     }

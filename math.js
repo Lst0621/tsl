@@ -93,6 +93,19 @@ export function array_eq(a, b) {
     }
     return true;
 }
+export function array_eq_2d(a, b) {
+    let len_a = a.length;
+    let len_b = b.length;
+    if (len_a != len_b) {
+        return false;
+    }
+    for (let i = 0; i < len_a; i++) {
+        if (!array_eq(a[i], b[i])) {
+            return false;
+        }
+    }
+    return true;
+}
 export function permutation_eq(p1, p2) {
     let l1 = p1.length;
     let l2 = p2.length;
