@@ -378,6 +378,9 @@ export function is_equivalence(relation) {
     return is_reflexive(relation) && is_symmetric(relation) && is_transitive(relation);
 }
 export function cartesian_product(inputs) {
+    return cartesian_product_matrix(inputs);
+}
+function cartesian_product_backtrack(inputs) {
     let all_combinations = [];
     cartesian_helper(inputs, [], all_combinations);
     return all_combinations;
@@ -427,4 +430,57 @@ export function generate_group(generators, multiply, eq, limit) {
         }
     }
     return ret;
+}
+export function transpose(a) {
+    let m = a.length;
+    let n = a[0].length;
+    let ans = [];
+    for (let i = 0; i < n; i++) {
+        let array = [];
+        for (let j = 0; j < m; j++) {
+            array.push(a[j][i]);
+        }
+        ans.push(array);
+    }
+    return ans;
+}
+export function matrix_multiply_general(a, b, multiply, addition) {
+    const rows_a = a.length;
+    const cols_a = a[0].length;
+    const rows_b = b.length;
+    const cols_b = b[0].length;
+    if (cols_a !== rows_b) {
+        console.log(a, b);
+        throw new Error("Matrix dimensions do not match for multiplication " + [rows_a, cols_a, rows_b, cols_a]);
+    }
+    const result = [];
+    for (let i = 0; i < rows_a; i++) {
+        const row = [];
+        for (let j = 0; j < cols_b; j++) {
+            let sum = multiply(a[i][0], b[0][j]);
+            for (let k = 1; k < cols_a; k++) {
+                const prod = multiply(a[i][k], b[k][j]);
+                sum = addition(sum, prod);
+            }
+            row.push(sum);
+        }
+        result.push(row);
+    }
+    return result;
+}
+function cartesian_product_matrix(inputs) {
+    let len = inputs.length;
+    if (len == 0) {
+        return inputs;
+    }
+    let result = [[]];
+    for (let i = 0; i < len; i++) {
+        if (inputs[i].length == 0) {
+            console.log("input " + i.toString() + " is empty!");
+            return [];
+        }
+        result = matrix_multiply_general(transpose([result]), [inputs[i]], (a, b) => ([...Array.from(a), b]), (a, b) => a).flat();
+    }
+    // need es2019 for flat
+    return result;
 }

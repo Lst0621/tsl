@@ -424,6 +424,10 @@ export function is_equivalence(relation: boolean[][]) {
 }
 
 export function cartesian_product<T>(inputs: T[][]): T[][] {
+    return cartesian_product_matrix(inputs)
+}
+
+function cartesian_product_backtrack<T>(inputs: T[][]): T[][] {
     let all_combinations: T[][] = []
     cartesian_helper(inputs, [], all_combinations)
     return all_combinations;
@@ -482,4 +486,75 @@ export function generate_group<T>(generators: T[],
     }
 
     return ret
+}
+
+export function transpose<T>(a: T[][]) {
+    let m = a.length
+    let n = a[0].length
+    let ans: T[][] = []
+    for (let i = 0; i < n; i++) {
+        let array: T[] = []
+        for (let j = 0; j < m; j++) {
+            array.push(a[j][i])
+        }
+        ans.push(array)
+    }
+    return ans
+}
+
+export function matrix_multiply_general<T1, T2, T3>(
+    a: T1[][],
+    b: T2[][],
+    multiply: ((a: T1, b: T2) => T3),
+    addition: ((a: T3, b: T3) => T3)
+): T3[][] {
+    const rows_a = a.length;
+    const cols_a = a[0].length;
+    const rows_b = b.length;
+    const cols_b = b[0].length;
+
+    if (cols_a !== rows_b) {
+        console.log(a, b)
+        throw new Error("Matrix dimensions do not match for multiplication " + [rows_a, cols_a, rows_b, cols_a]);
+    }
+
+    const result: T3[][] = [];
+
+    for (let i = 0; i < rows_a; i++) {
+        const row: T3[] = [];
+        for (let j = 0; j < cols_b; j++) {
+            let sum: T3 = multiply(a[i][0], b[0][j])
+            for (let k = 1; k < cols_a; k++) {
+                const prod = multiply(a[i][k], b[k][j]);
+                sum = addition(sum, prod);
+            }
+            row.push(sum);
+        }
+        result.push(row);
+    }
+
+    return result;
+}
+
+function cartesian_product_matrix<T>(inputs: T[][]) {
+    let len = inputs.length;
+    if (len == 0) {
+        return inputs;
+    }
+    let result: T[][] = [[]]
+    for (let i = 0; i < len; i++) {
+        if (inputs[i].length == 0) {
+            console.log("input " + i.toString() + " is empty!")
+            return []
+        }
+
+        result = matrix_multiply_general(
+            transpose([result]),
+            [inputs[i]],
+            (a: T[], b: T) => ([...Array.from(a), b]),
+            (a: T[], b: T[]) => a
+        ).flat()
+    }
+    // need es2019 for flat
+    return result
 }
