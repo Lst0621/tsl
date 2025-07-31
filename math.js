@@ -468,6 +468,13 @@ export function matrix_multiply_general(a, b, multiply, addition) {
     }
     return result;
 }
+export function matrix_multiply_number(a, b) {
+    return matrix_multiply_general(a, b, (m, n) => m * n, (a, b) => a + b);
+}
+export function inner_product(a, b) {
+    let product = matrix_multiply_number([a], transpose([b]));
+    return product[0][0];
+}
 function cartesian_product_matrix(inputs) {
     let len = inputs.length;
     if (len == 0) {

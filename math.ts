@@ -536,6 +536,18 @@ export function matrix_multiply_general<T1, T2, T3>(
     return result;
 }
 
+export function matrix_multiply_number(
+    a: number[][],
+    b: number[][]
+): number[][] {
+    return matrix_multiply_general(a, b, (m, n) => m * n, (a, b) => a + b);
+}
+
+export function inner_product(a: number[], b: number[]) {
+    let product = matrix_multiply_number([a], transpose([b]))
+    return product[0][0]
+}
+
 function cartesian_product_matrix<T>(inputs: T[][]) {
     let len = inputs.length;
     if (len == 0) {
