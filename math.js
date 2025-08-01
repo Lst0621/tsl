@@ -29,6 +29,33 @@ export function multiply_mod_n(a, b, n) {
 export function get_multiply_mod_n_function(n) {
     return (a, b) => multiply_mod_n(a, b, n);
 }
+export function add_mod_n(a, b, n) {
+    return (a + b) % n;
+}
+export function get_add_mod_n_function(n) {
+    return (a, b) => add_mod_n(a, b, n);
+}
+export function add_inverse_mod_n(a, n) {
+    return (n - (a % n)) % n;
+}
+export function get_add_inverse_mod_n_function(n) {
+    return (a) => add_inverse_mod_n(a, n);
+}
+export function mul_inverse_mod_n(a, n) {
+    // ax=1 (mod n)
+    if (gcd(a, n) != 1) {
+        throw Error("No multiplication inverse exists for " + a + " mod " + n);
+    }
+    for (let i = 1; i < n; i++) {
+        if (multiply_mod_n(i, a, n) == 1) {
+            return i;
+        }
+    }
+    throw Error("No multiplication inverse exists for " + a + " mod " + n);
+}
+export function get_mul_inverse_mod_n_function(n) {
+    return (a) => mul_inverse_mod_n(a, n);
+}
 export function are_co_prime(a, b) {
     return gcd(a, b) == 1;
 }
@@ -484,6 +511,62 @@ export function matrix_multiply_general(a, b, multiply, addition) {
 export function matrix_multiply_number(a, b) {
     return matrix_multiply_general(a, b, (m, n) => m * n, (a, b) => a + b);
 }
+export function matrix_multiply_zn(a, b, n) {
+    return matrix_multiply_general(a, b, get_multiply_mod_n_function(n), get_add_mod_n_function(n));
+}
+function get_det_func(get, n, multiply, addition, add_inverse) {
+    if (n === 1)
+        return get(0, 0);
+    if (n === 2) {
+        return addition(multiply(get(0, 0), get(1, 1)), add_inverse(multiply(get(0, 1), get(1, 0))));
+    }
+    let det = undefined;
+    let first = true;
+    for (let j = 0; j < n; j++) {
+        const sub_get = (i, k) => get(i + 1, k < j ? k : k + 1);
+        const sign = (j % 2 === 0) ? (x) => x : add_inverse;
+        const cofactor = multiply(sign(get(0, j)), get_det_func(sub_get, n - 1, multiply, addition, add_inverse));
+        if (first) {
+            det = cofactor;
+            first = false;
+        }
+        else {
+            det = addition(det, cofactor);
+        }
+    }
+    return det;
+}
+export function get_det(a, multiply, addition, add_inverse) {
+    const n = a.length;
+    if (n === 0 || a[0].length !== n) {
+        throw new Error("Matrix must be square");
+    }
+    const get = (i, j) => a[i][j];
+    return get_det_func(get, n, multiply, addition, add_inverse);
+}
+export function get_inverse(a, multiply, addition, add_inverse, mul_inverse) {
+    const n = a.length;
+    if (n === 0 || a[0].length !== n) {
+        throw new Error("Matrix must be square");
+    }
+    const get = (i, j) => a[i][j];
+    const det = get_det_func(get, n, multiply, addition, add_inverse);
+    const det_inv = mul_inverse(det);
+    const adjugate = Array.from({ length: n }, () => Array(n));
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            const sub_get = (r, c) => {
+                const row = r < i ? r : r + 1;
+                const col = c < j ? c : c + 1;
+                return get(row, col);
+            };
+            const cofactor = get_det_func(sub_get, n - 1, multiply, addition, add_inverse);
+            const sign = ((i + j) % 2 === 0) ? (x) => x : add_inverse;
+            adjugate[j][i] = multiply(det_inv, sign(cofactor)); // Transposed
+        }
+    }
+    return adjugate;
+}
 export function inner_product(a, b) {
     let product = matrix_multiply_number([a], transpose([b]));
     return product[0][0];
@@ -503,4 +586,26 @@ function cartesian_product_matrix(inputs) {
     }
     // need es2019 for flat
     return result;
+}
+export function array_to_matrix(array, m, n) {
+    if (array.length !== m * n) {
+        throw new Error(`Array length ${array.length} does not match matrix dimensions ${m}×${n}`);
+    }
+    const matrix = [];
+    for (let i = 0; i < m; i++) {
+        const row = array.slice(i * n, (i + 1) * n);
+        matrix.push(row);
+    }
+    return matrix;
+}
+export function gen_general_linear_zn_m_by_m(n, m) {
+    let gen = [];
+    for (let j = 0; j < m * m; j++) {
+        let elements = [];
+        for (let i = 0; i < n; i++) {
+            elements.push(i);
+        }
+        gen.push(elements);
+    }
+    return cartesian_product(gen).map(arr => array_to_matrix(arr, m, m)).filter(mat => get_det(mat, get_multiply_mod_n_function(n), get_add_mod_n_function(n), get_add_inverse_mod_n_function(n)) != 0);
 }
