@@ -444,7 +444,11 @@ export function generate_group(generators, multiply, eq, limit) {
     let current_length = ret.length;
     console.log("generating elements of the group, size from " + last_length + " to " + current_length);
     while (last_length < current_length) {
+        let step = 20;
         for (let i = 0; i < current_length; i++) {
+            if (i % Math.max(1, Math.floor(current_length / step)) == 0) {
+                console.debug("working on " + i + "/" + current_length);
+            }
             for (let j = last_length; j < current_length; j++) {
                 let product_ij = multiply(ret[i], ret[j]);
                 if (!ret.some(ele => eq(ele, product_ij))) {
