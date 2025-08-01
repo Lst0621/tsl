@@ -37,3 +37,15 @@ export function draw_table(table, rows, cols, multiply, rows_to_string, cols_to_
 export function draw_multiplication_table(table, input, multiply, to_string, input_get_color, product_get_color) {
     draw_table(table, input, input, (i, j) => multiply(input[i], input[j]), to_string, to_string, to_string, input_get_color, input_get_color, (i, j) => product_get_color(input[i], input[j], multiply(input[i], input[j])));
 }
+export function matrix_to_cell(arr) {
+    const matrixHtml = arr.map(row => `<div style="white-space: nowrap;">${row.map(x => x.toString()).join(' ')}</div>`).join('');
+    return `
+    <div style="display: flex; font-family: monospace;">
+        <div style="display: flex; flex-direction: column; justify-content: center;">(</div>
+        <div style="margin: 0 4px;">
+            ${matrixHtml}
+        </div>
+        <div style="display: flex; flex-direction: column; justify-content: center;">)</div>
+    </div>
+    `;
+}
