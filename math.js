@@ -602,14 +602,14 @@ export function array_to_matrix(array, m, n) {
     }
     return matrix;
 }
-export function gen_general_linear_zn_m_by_m(n, m) {
+export function gen_general_linear_n_zm(n, m) {
     let gen = [];
-    for (let j = 0; j < m * m; j++) {
+    for (let j = 0; j < n * n; j++) {
         let elements = [];
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < m; i++) {
             elements.push(i);
         }
         gen.push(elements);
     }
-    return cartesian_product(gen).map(arr => array_to_matrix(arr, m, m)).filter(mat => get_det(mat, get_multiply_mod_n_function(n), get_add_mod_n_function(n), get_add_inverse_mod_n_function(n)) != 0);
+    return cartesian_product(gen).map(arr => array_to_matrix(arr, n, n)).filter(mat => get_det(mat, get_multiply_mod_n_function(m), get_add_mod_n_function(m), get_add_inverse_mod_n_function(m)) != 0);
 }
