@@ -548,7 +548,7 @@ export function get_det(a, multiply, addition, add_inverse) {
     const get = (i, j) => a[i][j];
     return get_det_func(get, n, multiply, addition, add_inverse);
 }
-export function get_inverse(a, multiply, addition, add_inverse, mul_inverse) {
+export function get_inverse(a, addition, multiply, add_inverse, mul_inverse) {
     const n = a.length;
     if (n === 0 || a[0].length !== n) {
         throw new Error("Matrix must be square");

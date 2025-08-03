@@ -658,8 +658,8 @@ export function get_det<T>(
 
 export function get_inverse<T>(
     a: T[][],
-    multiply: (a: T, b: T) => T,
     addition: (a: T, b: T) => T,
+    multiply: (a: T, b: T) => T,
     add_inverse: (a: T) => T,
     mul_inverse: (a: T) => T
 ): T[][] {
