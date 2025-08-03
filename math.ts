@@ -746,3 +746,27 @@ export function gen_general_linear_n_zm(n: number, m: number): number[][][] {
 
     return cartesian_product(gen).map(arr => array_to_matrix(arr, n, n)).filter(mat => get_det(mat, get_multiply_mod_n_function(m), get_add_mod_n_function(m), get_add_inverse_mod_n_function(m)) != 0)
 }
+
+function complex_to_matrix(complex: number[] | number) {
+    if (typeof complex == "number") {
+        return complex_to_matrix([complex, 0])
+    }
+    // TODO size check
+    let real = complex[0]
+    let imaginary = complex[1]
+    return [[real, -imaginary], [imaginary, real]]
+}
+
+function matrix_to_complex(matrix: number[][]) {
+    // TODO size check
+    let real = matrix[0][0]
+    let imaginary = matrix[1][0]
+    return [real, imaginary]
+}
+
+export function complex_multiply(a: number[] | number, b: number[] | number) {
+    let mat_a = complex_to_matrix(a)
+    let mat_b = complex_to_matrix(b)
+    console.log(mat_a, mat_b)
+    return matrix_to_complex(matrix_multiply_number(mat_a, mat_b))
+}
