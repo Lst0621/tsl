@@ -1,0 +1,74 @@
+import { gcd } from "./math.js";
+import { matrix_add_number, matrix_multiply_number } from "./matrix.js";
+export function multiply_mod_n(a, b, n) {
+    return a * b % n;
+}
+export function get_multiply_mod_n_function(n) {
+    return (a, b) => multiply_mod_n(a, b, n);
+}
+export function add_mod_n(a, b, n) {
+    return (a + b) % n;
+}
+export function get_add_mod_n_function(n) {
+    return (a, b) => add_mod_n(a, b, n);
+}
+export function add_inverse_mod_n(a, n) {
+    return (n - (a % n)) % n;
+}
+export function get_add_inverse_mod_n_function(n) {
+    return (a) => add_inverse_mod_n(a, n);
+}
+export function mul_inverse_mod_n(a, n) {
+    // ax=1 (mod n)
+    if (gcd(a, n) != 1) {
+        throw Error("No multiplication inverse exists for " + a + " mod " + n);
+    }
+    for (let i = 1; i < n; i++) {
+        if (multiply_mod_n(i, a, n) == 1) {
+            return i;
+        }
+    }
+    throw Error("No multiplication inverse exists for " + a + " mod " + n);
+}
+export function get_mul_inverse_mod_n_function(n) {
+    return (a) => mul_inverse_mod_n(a, n);
+}
+export function are_co_prime(a, b) {
+    return gcd(a, b) == 1;
+}
+export function totient(n) {
+    let ans = 0;
+    for (let i = 1; i <= n; i++) {
+        if (are_co_prime(i, n)) {
+            ans += 1;
+        }
+    }
+    return ans;
+}
+function complex_to_matrix(complex) {
+    if (typeof complex == "number") {
+        return complex_to_matrix([complex, 0]);
+    }
+    // TODO size check
+    let real = complex[0];
+    let imaginary = complex[1];
+    return [[real, -imaginary], [imaginary, real]];
+}
+function matrix_to_complex(matrix) {
+    // TODO size check
+    let real = matrix[0][0];
+    let imaginary = matrix[1][0];
+    return [real, imaginary];
+}
+export function complex_add(a, b) {
+    let mat_a = complex_to_matrix(a);
+    let mat_b = complex_to_matrix(b);
+    console.log(mat_a, mat_b);
+    return matrix_to_complex(matrix_add_number(mat_a, mat_b));
+}
+export function complex_multiply(a, b) {
+    let mat_a = complex_to_matrix(a);
+    let mat_b = complex_to_matrix(b);
+    console.log(mat_a, mat_b);
+    return matrix_to_complex(matrix_multiply_number(mat_a, mat_b));
+}
