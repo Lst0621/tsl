@@ -81,7 +81,7 @@ export function matrix_multiply_number(
     a: number[][],
     b: number[][]
 ): number[][] {
-    return matrix_multiply_general(a, b, (m, n) => m * n, (a, b) => a + b);
+    return matrix_multiply_general(a, b, (m, n) => m * n, (m, n) => m + n);
 }
 
 export function matrix_add_number(
@@ -89,6 +89,17 @@ export function matrix_add_number(
     b: number[][]
 ): number[][] {
     return matrix_add_general(a, b, (a, b) => a + b);
+}
+
+export function matrix_inverse_number(
+    a: number[][]
+): number[][] {
+    return matrix_inverse(
+        a, (m, n) => m + n,
+        (m: number, n: number) => m * n,
+        (m: number) => -m,
+        (m: number) => 1 / m
+    );
 }
 
 export function matrix_multiply_zn(
@@ -172,7 +183,7 @@ export function array_to_matrix<T>(array: T[], m: number, n: number): T[][] {
     return matrix;
 }
 
-export function get_inverse<T>(
+export function matrix_inverse<T>(
     a: T[][],
     addition: (a: T, b: T) => T,
     multiply: (a: T, b: T) => T,

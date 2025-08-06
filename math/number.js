@@ -1,5 +1,5 @@
 import { gcd } from "./math.js";
-import { matrix_add_number, matrix_multiply_number } from "./matrix.js";
+import { matrix_add_number, matrix_inverse_number, matrix_multiply_number, transpose } from "./matrix.js";
 export function multiply_mod_n(a, b, n) {
     return a * b % n;
 }
@@ -71,4 +71,12 @@ export function complex_multiply(a, b) {
     let mat_b = complex_to_matrix(b);
     console.log(mat_a, mat_b);
     return matrix_to_complex(matrix_multiply_number(mat_a, mat_b));
+}
+export function get_conjugate(a) {
+    let mat_a = complex_to_matrix(a);
+    return matrix_to_complex(transpose(mat_a));
+}
+export function complex_inverse(a) {
+    let mat_a = complex_to_matrix(a);
+    return matrix_to_complex(matrix_inverse_number(mat_a));
 }

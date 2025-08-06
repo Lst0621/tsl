@@ -57,10 +57,13 @@ export function matrix_add_general(a, b, addition) {
     return result;
 }
 export function matrix_multiply_number(a, b) {
-    return matrix_multiply_general(a, b, (m, n) => m * n, (a, b) => a + b);
+    return matrix_multiply_general(a, b, (m, n) => m * n, (m, n) => m + n);
 }
 export function matrix_add_number(a, b) {
     return matrix_add_general(a, b, (a, b) => a + b);
+}
+export function matrix_inverse_number(a) {
+    return matrix_inverse(a, (m, n) => m + n, (m, n) => m * n, (m) => -m, (m) => 1 / m);
 }
 export function matrix_multiply_zn(a, b, n) {
     return matrix_multiply_general(a, b, get_multiply_mod_n_function(n), get_add_mod_n_function(n));
@@ -110,7 +113,7 @@ export function array_to_matrix(array, m, n) {
     }
     return matrix;
 }
-export function get_inverse(a, addition, multiply, add_inverse, mul_inverse) {
+export function matrix_inverse(a, addition, multiply, add_inverse, mul_inverse) {
     const n = a.length;
     if (n === 0 || a[0].length !== n) {
         throw new Error("Matrix must be square");
