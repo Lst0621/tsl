@@ -36,6 +36,39 @@ export function get_mul_inverse_mod_n_function(n) {
 export function are_co_prime(a, b) {
     return gcd(a, b) == 1;
 }
+export function is_prime(a) {
+    if (a <= 1) {
+        return false;
+    }
+    if (a == 2 || a == 3 || a == 5) {
+        return true;
+    }
+    for (let i = 2; i * i <= a; i++) {
+        if (a % i == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+export function* gen_prime() {
+    let n = 2;
+    while (true) {
+        if (is_prime(n)) {
+            yield n;
+        }
+        n++;
+    }
+}
+export function get_first_n_primes(n) {
+    let primes = [];
+    for (let prime of gen_prime()) {
+        primes.push(prime);
+        if (primes.length == n) {
+            break;
+        }
+    }
+    return primes;
+}
 export function totient(n) {
     let ans = 0;
     for (let i = 1; i <= n; i++) {

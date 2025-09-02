@@ -1,3 +1,12 @@
+export function clear_table(table: HTMLTableElement) {
+    while (true) {
+        if (table.rows.length == 0) {
+            break
+        }
+        table.deleteRow(0)
+    }
+}
+
 // Row, Column, Element
 export function draw_table<R, C, E>(
     table: HTMLTableElement,
@@ -11,13 +20,7 @@ export function draw_table<R, C, E>(
     col_get_color: (a: C) => string,
     element_get_color: (row: number, col: number) => string
 ) {
-    while (true) {
-        if (table.rows.length == 0) {
-            break
-        }
-        table.deleteRow(0)
-    }
-
+    clear_table(table)
     table.style.alignSelf = "center"
     table.style.borderStyle = "solid"
     table.style.textAlign = "center"

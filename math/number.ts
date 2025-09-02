@@ -46,6 +46,42 @@ export function are_co_prime(a: number, b: number): boolean {
     return gcd(a, b) == 1
 }
 
+export function is_prime(a: number) {
+    if (a <= 1) {
+        return false
+    }
+    if (a == 2 || a == 3 || a == 5) {
+        return true
+    }
+    for (let i = 2; i * i <= a; i++) {
+        if (a % i == 0) {
+            return false
+        }
+    }
+    return true
+}
+
+export function* gen_prime(): Generator<number> {
+    let n: number = 2
+    while (true) {
+        if (is_prime(n)) {
+            yield n
+        }
+        n++
+    }
+}
+
+export function get_first_n_primes(n: number) {
+    let primes: number[] = []
+    for (let prime of gen_prime()) {
+        primes.push(prime)
+        if (primes.length == n) {
+            break
+        }
+    }
+    return primes
+}
+
 export function totient(n: number): number {
     let ans: number = 0
     for (let i = 1; i <= n; i++) {
