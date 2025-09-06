@@ -13,3 +13,6 @@ export function range(start, end) {
     }
     return result;
 }
+export function create_2d_array(m, n, a) {
+    return Array.from({ length: m }, () => Array(n).fill(a));
+}

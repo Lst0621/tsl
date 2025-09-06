@@ -15,3 +15,7 @@ export function range(start: number, end: number) {
     }
     return result
 }
+
+export function create_2d_array<T>(m: number, n: number, a: T): T[][] {
+    return Array.from({ length: m }, () => Array(n).fill(a));
+}
