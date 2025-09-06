@@ -26,6 +26,7 @@ export function function_power_v2(f, n) {
         let result = x;
         for (let i = 0; i < n; i++) {
             result = f(result);
+            console.log(result);
         }
         return result;
     };

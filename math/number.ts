@@ -112,14 +112,14 @@ function matrix_to_complex(matrix: number[][]) {
 export function complex_add(a: number[] | number, b: number[] | number) {
     let mat_a = complex_to_matrix(a)
     let mat_b = complex_to_matrix(b)
-    console.log(mat_a, mat_b)
+    // console.log(mat_a, mat_b)
     return matrix_to_complex(matrix_add_number(mat_a, mat_b))
 }
 
 export function complex_multiply(a: number[] | number, b: number[] | number) {
     let mat_a = complex_to_matrix(a)
     let mat_b = complex_to_matrix(b)
-    console.log(mat_a, mat_b)
+    // console.log(mat_a, mat_b)
     return matrix_to_complex(matrix_multiply_number(mat_a, mat_b))
 }
 
@@ -131,4 +131,9 @@ export function get_conjugate(a: number[] | number) {
 export function complex_inverse(a: number[] | number) {
     let mat_a = complex_to_matrix(a)
     return matrix_to_complex(matrix_inverse_number(mat_a))
+}
+
+export function complex_divide(a: number[] | number, b: number[] | number) {
+    let b_inv = complex_inverse(b)
+    return complex_multiply(a, b_inv)
 }

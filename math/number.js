@@ -96,13 +96,13 @@ function matrix_to_complex(matrix) {
 export function complex_add(a, b) {
     let mat_a = complex_to_matrix(a);
     let mat_b = complex_to_matrix(b);
-    console.log(mat_a, mat_b);
+    // console.log(mat_a, mat_b)
     return matrix_to_complex(matrix_add_number(mat_a, mat_b));
 }
 export function complex_multiply(a, b) {
     let mat_a = complex_to_matrix(a);
     let mat_b = complex_to_matrix(b);
-    console.log(mat_a, mat_b);
+    // console.log(mat_a, mat_b)
     return matrix_to_complex(matrix_multiply_number(mat_a, mat_b));
 }
 export function get_conjugate(a) {
@@ -112,4 +112,8 @@ export function get_conjugate(a) {
 export function complex_inverse(a) {
     let mat_a = complex_to_matrix(a);
     return matrix_to_complex(matrix_inverse_number(mat_a));
+}
+export function complex_divide(a, b) {
+    let b_inv = complex_inverse(b);
+    return complex_multiply(a, b_inv);
 }
