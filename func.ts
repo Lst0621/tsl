@@ -31,7 +31,7 @@ export function function_power_v2<T>(f: (x: T) => T, n: number): (x: T) => T {
         let result = x
         for (let i = 0; i < n; i++) {
             result = f(result)
-            console.log(result)
+            // console.log(result)
         }
         return result
     }
