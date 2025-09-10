@@ -42,6 +42,13 @@ export function get_sub_seq_regex(s: string) {
     return sigma_star + s.split("").join(sigma_star) + sigma_star
 }
 
-export function get_regex_for_disalloweb_sub_seq(s: string[]) {
+export function get_regex_for_disallowed_sub_seq(s: string[]) {
     return "(" + s.map(get_sub_seq_regex).join("&cup;") + ")" + get_sup("<mi>c</mi>")
+}
+
+export function sub_empty_with_ep(str: string) {
+    if (str.length == 0) {
+        return "ε"
+    }
+    return str;
 }
