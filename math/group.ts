@@ -8,6 +8,7 @@ import {cartesian_product} from "./set.js";
 import {array_to_matrix, get_det} from "./matrix.js";
 import {get_sup} from "../util.js";
 import {array_eq} from "./math.js";
+import {generate_monoid} from "./monoid.js";
 
 export function get_u_n(n: number): number[] {
     let u: number[] = []
@@ -314,45 +315,8 @@ export function generate_group<T>(generators: T[],
                                   multiply: (a: T, b: T) => T,
                                   eq: (a: T, b: T) => boolean,
                                   limit: number): T[] {
-    let ret: T[] = Array.from(generators)
-    let last_length: number = 0
-    let current_length: number = ret.length
-    console.log("generating elements of the group, size from " + last_length + " to " + current_length)
-    while (last_length < current_length) {
-        let step = 20
-        for (let i = 0; i < current_length; i++) {
-            if (i % Math.max(1, Math.floor(current_length / step)) == 0) {
-                console.debug("working on " + i + "/" + current_length)
-            }
-            for (let j = last_length; j < current_length; j++) {
-                let product_ij = multiply(ret[i], ret[j])
-                if (!ret.some(ele => eq(ele, product_ij))) {
-                    console.log("adding " + i + ":" + ret[i] + " " + j + ":" + ret[j] + " " + product_ij)
-                    ret.push(product_ij)
-                }
-            }
-        }
-
-        for (let i = 0; i < current_length; i++) {
-            for (let j = last_length; j < current_length; j++) {
-                let product_ji = multiply(ret[j], ret[i])
-                if (!ret.some(ele => eq(ele, product_ji))) {
-                    console.log("adding " + j + ":" + ret[j] + " " + i + ":" + ret[i] + " " + product_ji)
-                    ret.push(product_ji)
-                }
-            }
-        }
-
-
-        last_length = current_length
-        current_length = ret.length
-        console.log("generating elements of the group, size from " + last_length + " to " + current_length)
-        if (limit > 0 && current_length > limit) {
-            break;
-        }
-    }
-
-    return ret
+    // TODO, probably this is no longer needed
+    return generate_monoid(generators, multiply, eq, limit)
 }
 
 export function gen_general_linear_n_zm(n: number, m: number): number[][][] {
