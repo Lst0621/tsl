@@ -117,3 +117,7 @@ export function get_all_subseq_for_blocks(blocks: string[]) {
     let all_subs = generate_monoid(generators, concat, array_eq)
     return all_subs
 }
+
+export function subseq_remove_short(subs: string[]) {
+    return subs.filter(x => !subs.some(y => (y.length > x.length && is_sub_seq(y, x))))
+}
