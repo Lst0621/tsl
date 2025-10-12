@@ -4,12 +4,12 @@ export function get_sub(text) {
 export function get_sup(text) {
     return "<sup>" + text + "</sup>";
 }
-export function range(start, end) {
+export function range(start, end, step = 1) {
     let result = [];
     let entry = start;
     while (entry < end) {
         result.push(entry);
-        entry += 1;
+        entry += step;
     }
     return result;
 }
