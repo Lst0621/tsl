@@ -171,7 +171,7 @@ function set_up(text) {
             years.push(year);
         }
         let tags_str = get_part_by_idx(parts, 5);
-        for (let tag of tags_str.split(",")) {
+        for (let tag of tag_str_to_tags(tags_str)) {
             if (tag.length > 0 && !tags.includes(tag)) {
                 tags.push(tag);
             }
@@ -219,7 +219,7 @@ function show_all_books() {
         let year = Number(parts[3]);
         let month = Number(parts[4]);
         let tags_str = get_part_by_idx(parts, 5);
-        let tags = tags_str.split(',').filter(tag => tag.length > 0);
+        let tags = tag_str_to_tags(tags_str);
         let checkout_str = get_part_by_idx(parts, 6);
         let checkouts = checkout_str.split(',').filter(checkout => checkout.length > 0);
         if (chosen_tags.length == 0 || tags.some(tag => chosen_tags.includes(tag)) || checkouts.some(checkout => chosen_tags.includes(checkout))) {
@@ -228,6 +228,23 @@ function show_all_books() {
     }
     clear_groups(years);
     add_footer();
+}
+function tag_str_to_tags(tags_str) {
+    let tags = tags_str.split(',').filter(tag => tag.length > 0);
+    let expanded = [...tags];
+    for (let tag of tags) {
+        expanded.push(...add_super_tag(tag));
+    }
+    // dedup before return (preserve order)
+    const seen = new Set();
+    return expanded.filter(t => !seen.has(t) && (seen.add(t), true));
+}
+function add_super_tag(tag) {
+    let added = [];
+    if (tag == "Algebra" || tag == "Logic" || tag == "Set" || tag == "Analysis") {
+        added.push("Math");
+    }
+    return added;
 }
 export function update_from_file(url) {
     let req = new XMLHttpRequest();

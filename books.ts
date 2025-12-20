@@ -194,7 +194,7 @@ function set_up(text: string) {
         }
 
         let tags_str: string = get_part_by_idx(parts, 5)
-        for (let tag of tags_str.split(",")) {
+        for (let tag of tag_str_to_tags(tags_str)) {
             if (tag.length > 0 && !tags.includes(tag)) {
                 tags.push(tag)
             }
@@ -252,7 +252,7 @@ function show_all_books() {
         let year: number = Number(parts[3])
         let month: number = Number(parts[4])
         let tags_str: string = get_part_by_idx(parts, 5)
-        let tags: string[] = tags_str.split(',').filter(tag => tag.length > 0)
+        let tags: string[] = tag_str_to_tags(tags_str)
         let checkout_str: string = get_part_by_idx(parts, 6)
         let checkouts: string[] = checkout_str.split(',').filter(checkout => checkout.length > 0)
         if (chosen_tags.length == 0 || tags.some(tag => chosen_tags.includes(tag)) || checkouts.some(checkout => chosen_tags.includes(checkout))) {
@@ -264,6 +264,26 @@ function show_all_books() {
     add_footer()
 }
 
+function tag_str_to_tags(tags_str: string): string[] {
+    let tags: string[] = tags_str.split(',').filter(tag => tag.length > 0)
+    let expanded: string[] = [...tags]
+    for (let tag of tags) {
+        expanded.push(...add_super_tag(tag))
+    }
+
+    // dedup before return (preserve order)
+    const seen = new Set<string>()
+    return expanded.filter(t => !seen.has(t) && (seen.add(t), true))
+}
+
+function add_super_tag(tag: string) {
+    let added = []
+    if (tag == "Algebra" || tag == "Logic" || tag == "Set" || tag == "Analysis") {
+        added.push("Math")
+    }
+    return added
+}
+
 export function update_from_file(url: string) {
     let req: XMLHttpRequest = new XMLHttpRequest()
     req.addEventListener("load", function () {
@@ -273,4 +293,3 @@ export function update_from_file(url: string) {
     req.open("GET", url);
     req.send();
 }
-
