@@ -239,9 +239,18 @@ function tag_str_to_tags(tags_str) {
     const seen = new Set();
     return expanded.filter(t => !seen.has(t) && (seen.add(t), true));
 }
+const MATH_TAGS = new Set([
+    "Algebra",
+    "Logic",
+    "Set",
+    "Analysis",
+    "Geometry",
+    "Discrete",
+    "Category"
+]);
 function add_super_tag(tag) {
-    let added = [];
-    if (tag == "Algebra" || tag == "Logic" || tag == "Set" || tag == "Analysis") {
+    const added = [];
+    if (MATH_TAGS.has(tag)) {
         added.push("Math");
     }
     return added;
