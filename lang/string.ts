@@ -1,14 +1,37 @@
 import {cartesian_product} from "../math/set.js";
 import {get_sup} from "../util.js";
-import {generate_semigroup} from "../math/semigroup.js";
+import {generate_semigroup, get_all_idempotent_elements} from "../math/semigroup.js";
 import {array_eq} from "../math/math.js";
 
 export function get_all_prefixes(str: string): string[] {
     const prefixes: string[] = [];
     for (let i = 0; i <= str.length; i++) {
-        prefixes.push(str.substring(0, i));
+        prefixes.push(get_prefix(str, i));
     }
     return prefixes;
+}
+
+export function get_prefix(str: string, n: number): string {
+    if (n >= str.length) {
+        return str;
+    }
+    return str.substring(0, n);
+}
+
+export function get_suffix(str: string, n: number): string {
+    if (n >= str.length) {
+        return str;
+    }
+    return str.substring(str.length - n, str.length);
+}
+
+export function concat_and_get_suffix_k(str1: string, str2: string, k: number): string {
+    let concat_str = str1 + str2;
+    return get_suffix(concat_str, k);
+}
+
+export function get_concat_and_suffix_func(k: number) {
+    return (str1: string, str2: string) => concat_and_get_suffix_k(str1, str2, k);
 }
 
 export function get_all_chars(s: string): string[] {

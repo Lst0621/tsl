@@ -1,4 +1,4 @@
-export function generate_semigroup(generators, multiply, eq, limit = 200) {
+export function generate_semigroup(generators, multiply, eq, limit = -1) {
     let ret = Array.from(generators);
     let last_length = 0;
     let current_length = ret.length;
@@ -47,4 +47,7 @@ export function get_idempotent_power(item, multiply, eq, limit = -1) {
         power_2t = multiply(power_2t, square);
     }
     return [-1, null];
+}
+export function get_all_idempotent_elements(elements, multiply, eq) {
+    return elements.filter(item => eq(multiply(item, item), item));
 }

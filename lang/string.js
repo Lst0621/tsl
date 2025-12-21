@@ -5,9 +5,28 @@ import { array_eq } from "../math/math.js";
 export function get_all_prefixes(str) {
     const prefixes = [];
     for (let i = 0; i <= str.length; i++) {
-        prefixes.push(str.substring(0, i));
+        prefixes.push(get_prefix(str, i));
     }
     return prefixes;
+}
+export function get_prefix(str, n) {
+    if (n >= str.length) {
+        return str;
+    }
+    return str.substring(0, n);
+}
+export function get_suffix(str, n) {
+    if (n >= str.length) {
+        return str;
+    }
+    return str.substring(str.length - n, str.length);
+}
+export function concat_and_get_suffix_k(str1, str2, k) {
+    let concat_str = str1 + str2;
+    return get_suffix(concat_str, k);
+}
+export function get_concat_and_suffix_func(k) {
+    return (str1, str2) => concat_and_get_suffix_k(str1, str2, k);
 }
 export function get_all_chars(s) {
     return Array.from(new Set(s.split(""))).sort();

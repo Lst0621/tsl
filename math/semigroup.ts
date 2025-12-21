@@ -1,7 +1,7 @@
 export function generate_semigroup<T>(generators: T[],
                                       multiply: (a: T, b: T) => T,
                                       eq: (a: T, b: T) => boolean,
-                                      limit: number = 200): T[] {
+                                      limit: number = -1): T[] {
     let ret: T[] = Array.from(generators)
     let last_length: number = 0
     let current_length: number = ret.length
@@ -46,7 +46,7 @@ export function get_idempotent_power<T>(item: T,
                                         multiply: (a: T, b: T) => T,
                                         eq: (a: T, b: T) => boolean,
                                         limit: number = -1): [number, T | null] {
-    let square = multiply(item, item)
+    let square: T = multiply(item, item)
     let power_t: T = item
     let power_2t: T = square
     for (let i = 1; i != limit; i++) {
@@ -57,4 +57,10 @@ export function get_idempotent_power<T>(item: T,
         power_2t = multiply(power_2t, square)
     }
     return [-1, null]
+}
+
+export function get_all_idempotent_elements<T>(elements: T[],
+                                               multiply: (a: T, b: T) => T,
+                                               eq: (a: T, b: T) => boolean): T[] {
+    return elements.filter(item => eq(multiply(item, item), item))
 }
