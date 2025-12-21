@@ -45,7 +45,7 @@ export function generate_semigroup<T>(generators: T[],
 export function get_idempotent_power<T>(item: T,
                                         multiply: (a: T, b: T) => T,
                                         eq: (a: T, b: T) => boolean,
-                                        limit: number = -1) {
+                                        limit: number = -1): [number, T | null] {
     let square = multiply(item, item)
     let power_t: T = item
     let power_2t: T = square

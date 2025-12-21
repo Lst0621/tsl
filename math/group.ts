@@ -20,7 +20,8 @@ export function get_u_n(n: number): number[] {
     return u
 }
 
-export function get_order<T>(element: T, multiply: (a: T, b: T) => T, eq: (a: T, b: T) => boolean) {
+export function get_order<T>(element: T, multiply: (a: T, b: T) => T, eq: (a: T, b: T) => boolean = (a, b) => a === b): number {
+
     return get_idempotent_power(element, multiply, eq)[0]
 }
 
@@ -32,10 +33,8 @@ export function get_primitive_roots(n: number) {
     let ret = []
     for (let i = 0; i < u.length; i++) {
         let a = u[i]
-        let g = generate_semigroup([a], get_multiply_mod_n_function(n), (a, b) => a == b, n)
-        if (g.length == u.length) {
-            let idempotent_power = get_order(a, get_multiply_mod_n_function(n), (x, y) => x == y)
-            console.log("Compare group size with idem power", idempotent_power, g.length)
+        let order = get_order(a, get_multiply_mod_n_function(n))
+        if (order == u.length) {
             ret.push(a)
         }
     }

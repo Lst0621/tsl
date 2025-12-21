@@ -13,7 +13,7 @@ export function get_u_n(n) {
     }
     return u;
 }
-export function get_order(element, multiply, eq) {
+export function get_order(element, multiply, eq = (a, b) => a === b) {
     return get_idempotent_power(element, multiply, eq)[0];
 }
 export function get_primitive_roots(n) {
@@ -24,10 +24,8 @@ export function get_primitive_roots(n) {
     let ret = [];
     for (let i = 0; i < u.length; i++) {
         let a = u[i];
-        let g = generate_semigroup([a], get_multiply_mod_n_function(n), (a, b) => a == b, n);
-        if (g.length == u.length) {
-            let idempotent_power = get_order(a, get_multiply_mod_n_function(n), (x, y) => x == y);
-            console.log("Compare group size with idem power", idempotent_power, g.length);
+        let order = get_order(a, get_multiply_mod_n_function(n));
+        if (order == u.length) {
             ret.push(a);
         }
     }
