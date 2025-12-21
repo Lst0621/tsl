@@ -24,7 +24,7 @@ export function get_primitive_roots(n) {
     let ret = [];
     for (let i = 0; i < u.length; i++) {
         let a = u[i];
-        let g = generate_group([a], get_multiply_mod_n_function(n), (a, b) => a == b, n);
+        let g = generate_semigroup([a], get_multiply_mod_n_function(n), (a, b) => a == b, n);
         if (g.length == u.length) {
             let idempotent_power = get_order(a, get_multiply_mod_n_function(n), (x, y) => x == y);
             console.log("Compare group size with idem power", idempotent_power, g.length);
@@ -230,7 +230,7 @@ function next_permutation_in_place(nums) {
     }
 }
 export function get_all_dihedral(n) {
-    return generate_group([[1, 0], [0, 1]], (a, b) => dihedral_multiply(a, b, n), array_eq, 0).sort((a, b) => ((a[1] == b[1]) ? a[0] - b[0] : a[1] - b[1]));
+    return generate_semigroup([[1, 0], [0, 1]], (a, b) => dihedral_multiply(a, b, n), array_eq, 0).sort((a, b) => ((a[1] == b[1]) ? a[0] - b[0] : a[1] - b[1]));
 }
 export function dihedral_multiply(a, b, n) {
     let r_a = a[0];
@@ -278,10 +278,6 @@ export function dihedral_to_str(a) {
         return "s";
     }
     return "r" + (r == 1 ? "" : get_sup(r.toString())) + (s == 0 ? "" : "s");
-}
-export function generate_group(generators, multiply, eq, limit) {
-    // TODO, probably this is no longer needed
-    return generate_semigroup(generators, multiply, eq, limit);
 }
 export function gen_general_linear_n_zm(n, m) {
     let gen = [];
