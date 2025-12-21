@@ -51,3 +51,6 @@ export function get_idempotent_power(item, multiply, eq, limit = -1) {
 export function get_all_idempotent_elements(elements, multiply, eq) {
     return elements.filter(item => eq(multiply(item, item), item));
 }
+export function get_highest_idempotent_power(elements, multiply, eq) {
+    return Math.max(...elements.map(item => get_idempotent_power(item, multiply, eq)[0]));
+}

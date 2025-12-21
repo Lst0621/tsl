@@ -64,3 +64,9 @@ export function get_all_idempotent_elements<T>(elements: T[],
                                                eq: (a: T, b: T) => boolean): T[] {
     return elements.filter(item => eq(multiply(item, item), item))
 }
+
+export function get_highest_idempotent_power<T>(elements: T[],
+                                                multiply: (a: T, b: T) => T,
+                                                eq: (a: T, b: T) => boolean): number {
+    return Math.max(...elements.map(item => get_idempotent_power(item, multiply, eq)[0]))
+}
