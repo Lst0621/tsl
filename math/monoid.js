@@ -2,7 +2,7 @@ export function generate_monoid(generators, multiply, eq, limit = 200) {
     let ret = Array.from(generators);
     let last_length = 0;
     let current_length = ret.length;
-    console.log("generating elements of the monoid, size from " + last_length + " to " + current_length);
+    console.debug("generating elements of the monoid, size from " + last_length + " to " + current_length);
     while (last_length < current_length) {
         let step = 20;
         for (let i = 0; i < current_length; i++) {
@@ -12,7 +12,7 @@ export function generate_monoid(generators, multiply, eq, limit = 200) {
             for (let j = last_length; j < current_length; j++) {
                 let product_ij = multiply(ret[i], ret[j]);
                 if (!ret.some(ele => eq(ele, product_ij))) {
-                    console.log("adding " + i + ":" + ret[i] + " " + j + ":" + ret[j] + " " + product_ij);
+                    console.debug("adding " + i + ":" + ret[i] + " " + j + ":" + ret[j] + " " + product_ij);
                     ret.push(product_ij);
                 }
             }
@@ -28,10 +28,23 @@ export function generate_monoid(generators, multiply, eq, limit = 200) {
         }
         last_length = current_length;
         current_length = ret.length;
-        console.log("generating elements of the monoid, size from " + last_length + " to " + current_length);
+        console.debug("generating elements of the monoid, size from " + last_length + " to " + current_length);
         if (limit > 0 && current_length > limit) {
             break;
         }
     }
     return ret;
+}
+export function get_idempotent_power(item, multiply, eq, limit = -1) {
+    let square = multiply(item, item);
+    let power_t = item;
+    let power_2t = square;
+    for (let i = 1; i != limit; i++) {
+        if (eq(power_t, power_2t)) {
+            return [i, power_t];
+        }
+        power_t = multiply(power_t, item);
+        power_2t = multiply(power_2t, square);
+    }
+    return [-1, null];
 }

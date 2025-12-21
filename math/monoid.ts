@@ -5,7 +5,7 @@ export function generate_monoid<T>(generators: T[],
     let ret: T[] = Array.from(generators)
     let last_length: number = 0
     let current_length: number = ret.length
-    console.log("generating elements of the monoid, size from " + last_length + " to " + current_length)
+    console.debug("generating elements of the monoid, size from " + last_length + " to " + current_length)
     while (last_length < current_length) {
         let step = 20
         for (let i = 0; i < current_length; i++) {
@@ -15,7 +15,7 @@ export function generate_monoid<T>(generators: T[],
             for (let j = last_length; j < current_length; j++) {
                 let product_ij = multiply(ret[i], ret[j])
                 if (!ret.some(ele => eq(ele, product_ij))) {
-                    console.log("adding " + i + ":" + ret[i] + " " + j + ":" + ret[j] + " " + product_ij)
+                    console.debug("adding " + i + ":" + ret[i] + " " + j + ":" + ret[j] + " " + product_ij)
                     ret.push(product_ij)
                 }
             }
@@ -33,11 +33,28 @@ export function generate_monoid<T>(generators: T[],
 
         last_length = current_length
         current_length = ret.length
-        console.log("generating elements of the monoid, size from " + last_length + " to " + current_length)
+        console.debug("generating elements of the monoid, size from " + last_length + " to " + current_length)
         if (limit > 0 && current_length > limit) {
             break;
         }
     }
 
     return ret
+}
+
+export function get_idempotent_power<T>(item: T,
+                                        multiply: (a: T, b: T) => T,
+                                        eq: (a: T, b: T) => boolean,
+                                        limit: number = -1) {
+    let square = multiply(item, item)
+    let power_t: T = item
+    let power_2t: T = square
+    for (let i = 1; i != limit; i++) {
+        if (eq(power_t, power_2t)) {
+            return [i, power_t]
+        }
+        power_t = multiply(power_t, item)
+        power_2t = multiply(power_2t, square)
+    }
+    return [-1, null]
 }
