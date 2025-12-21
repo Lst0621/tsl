@@ -1,6 +1,6 @@
 import { matrix_multiply_general, transpose } from "./matrix.js";
 import { array_eq } from "./math.js";
-import { generate_monoid } from "./monoid.js";
+import { generate_semigroup } from "./semigroup.js";
 export function is_reflexive(relation) {
     let len = relation.length;
     for (let i = 0; i < len; i++) {
@@ -126,5 +126,5 @@ export class EndoFunction {
     }
 }
 export function gen_monoid_from_endofuncs(funcs) {
-    return generate_monoid(funcs, (a, b) => a.multiply(b), (a, b) => a.eq(b));
+    return generate_semigroup(funcs, (a, b) => a.multiply(b), (a, b) => a.eq(b));
 }

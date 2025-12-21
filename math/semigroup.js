@@ -1,8 +1,8 @@
-export function generate_monoid(generators, multiply, eq, limit = 200) {
+export function generate_semigroup(generators, multiply, eq, limit = 200) {
     let ret = Array.from(generators);
     let last_length = 0;
     let current_length = ret.length;
-    console.debug("generating elements of the monoid, size from " + last_length + " to " + current_length);
+    console.debug("generating elements of the semigroup, size from " + last_length + " to " + current_length);
     while (last_length < current_length) {
         let step = 20;
         for (let i = 0; i < current_length; i++) {
@@ -28,7 +28,7 @@ export function generate_monoid(generators, multiply, eq, limit = 200) {
         }
         last_length = current_length;
         current_length = ret.length;
-        console.debug("generating elements of the monoid, size from " + last_length + " to " + current_length);
+        console.debug("generating elements of the semigroup, size from " + last_length + " to " + current_length);
         if (limit > 0 && current_length > limit) {
             break;
         }

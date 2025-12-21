@@ -1,11 +1,11 @@
-export function generate_monoid<T>(generators: T[],
-                                   multiply: (a: T, b: T) => T,
-                                   eq: (a: T, b: T) => boolean,
-                                   limit: number = 200): T[] {
+export function generate_semigroup<T>(generators: T[],
+                                      multiply: (a: T, b: T) => T,
+                                      eq: (a: T, b: T) => boolean,
+                                      limit: number = 200): T[] {
     let ret: T[] = Array.from(generators)
     let last_length: number = 0
     let current_length: number = ret.length
-    console.debug("generating elements of the monoid, size from " + last_length + " to " + current_length)
+    console.debug("generating elements of the semigroup, size from " + last_length + " to " + current_length)
     while (last_length < current_length) {
         let step = 20
         for (let i = 0; i < current_length; i++) {
@@ -33,7 +33,7 @@ export function generate_monoid<T>(generators: T[],
 
         last_length = current_length
         current_length = ret.length
-        console.debug("generating elements of the monoid, size from " + last_length + " to " + current_length)
+        console.debug("generating elements of the semigroup, size from " + last_length + " to " + current_length)
         if (limit > 0 && current_length > limit) {
             break;
         }

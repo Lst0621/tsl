@@ -1,6 +1,6 @@
 import {matrix_multiply_general, transpose} from "./matrix.js";
 import {array_eq} from "./math.js";
-import {generate_monoid} from "./monoid.js";
+import {generate_semigroup} from "./semigroup.js";
 
 export function is_reflexive(relation: boolean[][]) {
     let len = relation.length
@@ -143,7 +143,7 @@ export class EndoFunction<T> {
 }
 
 export function gen_monoid_from_endofuncs<T>(funcs: EndoFunction<T>[]) {
-    return generate_monoid(
+    return generate_semigroup(
         funcs,
         (a: EndoFunction<T>, b: EndoFunction<T>) => a.multiply(b),
         (a: EndoFunction<T>, b: EndoFunction<T>) => a.eq(b))

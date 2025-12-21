@@ -8,7 +8,7 @@ import {cartesian_product} from "./set.js";
 import {array_to_matrix, get_det} from "./matrix.js";
 import {get_sup} from "../util.js";
 import {array_eq} from "./math.js";
-import {generate_monoid, get_idempotent_power} from "./monoid.js";
+import {generate_semigroup, get_idempotent_power} from "./semigroup.js";
 
 export function get_u_n(n: number): number[] {
     let u: number[] = []
@@ -34,7 +34,7 @@ export function get_primitive_roots(n: number) {
         let a = u[i]
         let g = generate_group([a], get_multiply_mod_n_function(n), (a, b) => a == b, n)
         if (g.length == u.length) {
-            let idempotent_power = get_order(a, get_multiply_mod_n_function(n), (a, b) => a == b)
+            let idempotent_power = get_order(a, get_multiply_mod_n_function(n), (x, y) => x == y)
             console.log("Compare group size with idem power", idempotent_power, g.length)
             ret.push(a)
         }
@@ -322,7 +322,7 @@ export function generate_group<T>(generators: T[],
                                   eq: (a: T, b: T) => boolean,
                                   limit: number): T[] {
     // TODO, probably this is no longer needed
-    return generate_monoid(generators, multiply, eq, limit)
+    return generate_semigroup(generators, multiply, eq, limit)
 }
 
 export function gen_general_linear_n_zm(n: number, m: number): number[][][] {

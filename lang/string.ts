@@ -1,6 +1,6 @@
 import {cartesian_product} from "../math/set.js";
 import {get_sup} from "../util.js";
-import {generate_monoid} from "../math/monoid.js";
+import {generate_semigroup} from "../math/semigroup.js";
 import {array_eq} from "../math/math.js";
 
 export function get_all_prefixes(str: string): string[] {
@@ -114,7 +114,7 @@ export function get_all_subseq_for_blocks(blocks: string[]) {
     generators.push([""])
     let concat = (s1: string[], s2: string[]) =>
         cat_subseq_of_blocklist(s1, s2, k, blocks)
-    let all_subs = generate_monoid(generators, concat, array_eq)
+    let all_subs = generate_semigroup(generators, concat, array_eq)
     return all_subs
 }
 
