@@ -318,6 +318,8 @@ export function dihedral_to_str(a: number[]) {
 
 export function gen_general_linear_n_zm(n: number, m: number): number[][][] {
     let gen: number[][] = []
+    // There are n*n elements in the matrix
+    // Every element can be from 0 to m-1
     for (let j = 0; j < n * n; j++) {
         let elements: number[] = [];
         for (let i = 0; i < m; i++) {

@@ -1,3 +1,4 @@
+import { cartesian_product } from "./set.js";
 export function generate_semigroup(generators, multiply, eq, limit = -1) {
     let ret = Array.from(generators);
     let last_length = 0;
@@ -53,4 +54,42 @@ export function get_all_idempotent_elements(elements, multiply, eq) {
 }
 export function get_highest_idempotent_power(elements, multiply, eq) {
     return Math.max(...elements.map(item => get_idempotent_power(item, multiply, eq)[0]));
+}
+export function is_abelian(elements, multiply, eq) {
+    let len = elements.length;
+    for (let i = 0; i < len; i++) {
+        for (let j = 0; j < i; j++) {
+            let ab = multiply(elements[i], elements[j]);
+            let ba = multiply(elements[j], elements[i]);
+            if (!eq(ab, ba)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+export function semigroup_power(base, exponent, multiply) {
+    if (exponent == 1) {
+        return base;
+    }
+    let half = Math.floor(exponent / 2);
+    let half_power = semigroup_power(base, half, multiply);
+    if (exponent % 2 == 0) {
+        return multiply(half_power, half_power);
+    }
+    else {
+        return multiply(multiply(half_power, half_power), base);
+    }
+}
+export function get_definite_k(elements, multiply, eq) {
+    let highest_idempotent_power = get_highest_idempotent_power(elements, multiply, eq);
+    let candidates = elements.map(item => semigroup_power(item, highest_idempotent_power, multiply));
+    for (let pair of cartesian_product([elements, candidates])) {
+        let element = pair[0];
+        let candidate = pair[1];
+        if (!eq(multiply(element, candidate), candidate)) {
+            return -1;
+        }
+    }
+    return highest_idempotent_power;
 }

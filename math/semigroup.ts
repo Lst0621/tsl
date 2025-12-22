@@ -1,3 +1,5 @@
+import {cartesian_product} from "./set.js";
+
 export function generate_semigroup<T>(generators: T[],
                                       multiply: (a: T, b: T) => T,
                                       eq: (a: T, b: T) => boolean,
@@ -69,4 +71,50 @@ export function get_highest_idempotent_power<T>(elements: T[],
                                                 multiply: (a: T, b: T) => T,
                                                 eq: (a: T, b: T) => boolean): number {
     return Math.max(...elements.map(item => get_idempotent_power(item, multiply, eq)[0]))
+}
+
+export function is_abelian<T>(elements: T[],
+                              multiply: (a: T, b: T) => T,
+                              eq: (a: T, b: T) => boolean): boolean {
+    let len = elements.length;
+    for (let i = 0; i < len; i++) {
+        for (let j = 0; j < i; j++) {
+            let ab = multiply(elements[i], elements[j])
+            let ba = multiply(elements[j], elements[i])
+            if (!eq(ab, ba)) {
+                return false
+            }
+        }
+    }
+    return true
+}
+
+export function semigroup_power<T>(base: T,
+                                   exponent: number,
+                                   multiply: (a: T, b: T) => T): T {
+    if (exponent == 1) {
+        return base
+    }
+    let half = Math.floor(exponent / 2)
+    let half_power = semigroup_power(base, half, multiply)
+    if (exponent % 2 == 0) {
+        return multiply(half_power, half_power)
+    } else {
+        return multiply(multiply(half_power, half_power), base)
+    }
+}
+
+export function get_definite_k<T>(elements: T[],
+                                  multiply: (a: T, b: T) => T,
+                                  eq: (a: T, b: T) => boolean): number {
+    let highest_idempotent_power = get_highest_idempotent_power(elements, multiply, eq)
+    let candidates: T[] = elements.map(item => semigroup_power(item, highest_idempotent_power, multiply))
+    for (let pair of cartesian_product<T>([elements, candidates])) {
+        let element: T = pair[0]
+        let candidate: T = pair[1]
+        if (!eq(multiply(element, candidate), candidate)) {
+            return -1
+        }
+    }
+    return highest_idempotent_power
 }
