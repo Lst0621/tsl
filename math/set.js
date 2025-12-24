@@ -128,3 +128,23 @@ export class EndoFunction {
 export function gen_monoid_from_endofuncs(funcs) {
     return generate_semigroup(funcs, (a, b) => a.multiply(b), (a, b) => a.eq(b));
 }
+export function intersection_sets(a, b) {
+    return new Set([...a].filter(x => b.has(x)));
+}
+export function set_eq(a, b) {
+    if (a === b) {
+        return true;
+    }
+    if (a.size !== b.size) {
+        return false;
+    }
+    for (let x of a) {
+        if (!b.has(x)) {
+            return false;
+        }
+    }
+    return true;
+}
+export function union_sets(a, b) {
+    return new Set([...a, ...b]);
+}

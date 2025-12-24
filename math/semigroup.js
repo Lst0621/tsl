@@ -93,3 +93,31 @@ export function get_definite_k(elements, multiply, eq) {
     }
     return highest_idempotent_power;
 }
+export function get_reverse_definite_k(elements, multiply, eq) {
+    let highest_idempotent_power = get_highest_idempotent_power(elements, multiply, eq);
+    let candidates = elements.map(item => semigroup_power(item, highest_idempotent_power, multiply));
+    for (let pair of cartesian_product([elements, candidates])) {
+        let element = pair[0];
+        let candidate = pair[1];
+        if (!eq(multiply(candidate, element), candidate)) {
+            return -1;
+        }
+    }
+    return highest_idempotent_power;
+}
+export function is_aperiodic(elements, multiply, eq) {
+    let max_power = 1;
+    for (let element of elements) {
+        let [power, idempotent_element] = get_idempotent_power(element, multiply, eq);
+        if (idempotent_element == null) {
+            console.log("Idempotent power is not available");
+            return -1;
+        }
+        if (!eq(multiply(idempotent_element, element), idempotent_element)) {
+            console.log("Element does not satisfy aperiodic condition");
+            return -1;
+        }
+        max_power = Math.max(max_power, power);
+    }
+    return max_power;
+}
