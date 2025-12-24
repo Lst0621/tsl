@@ -10,6 +10,9 @@ export function function_power(f, n) {
 export function identity(x) {
     return x;
 }
+export function equals(a, b) {
+    return a === b;
+}
 export function function_power_v1(f, n) {
     // This may cause stack overflow.
     let power = (x) => x;

@@ -14,6 +14,10 @@ export function identity<T>(x: T): T {
     return x;
 }
 
+export function equals<T>(a: T, b: T): boolean {
+    return a === b;
+}
+
 export function function_power_v1<T>(f: (x: T) => T, n: number): (x: T) => T {
     // This may cause stack overflow.
     let power = (x: T) => x
