@@ -44,6 +44,15 @@ export function generate_semigroup<T>(generators: T[],
     return ret
 }
 
+export function is_closure<T>(generators: T[],
+                              multiply: (a: T, b: T) => T,
+                              eq: (a: T, b: T) => boolean) {
+    let limit = generators.length + 1
+    // no need to generate the whole semigroup, just check if it is already closed
+    let closure = generate_semigroup(generators, multiply, eq, limit);
+    return closure.length == closure.length
+}
+
 export function get_idempotent_power<T>(item: T,
                                         multiply: (a: T, b: T) => T,
                                         eq: (a: T, b: T) => boolean,
@@ -159,8 +168,12 @@ export function is_aperiodic<T>(elements: T[],
 export function is_monoid<T>(elements: T[],
                              multiply: (a: T, b: T) => T,
                              eq: (a: T, b: T) => boolean): [boolean, T | null] {
-    let idempotent_elements: T[] = get_all_idempotent_elements(elements, multiply, eq)
+    if (!is_closure(elements, multiply, eq)) {
+        console.log("Not even a semigroup")
+        return [false, null];
+    }
 
+    let idempotent_elements: T[] = get_all_idempotent_elements(elements, multiply, eq)
     console.log(idempotent_elements.length)
 
     for (let idempotent of idempotent_elements) {
@@ -176,6 +189,7 @@ export function is_monoid<T>(elements: T[],
             return [true, idempotent]
         }
     }
+
     console.log("No identity element found")
     return [false, null]
 }

@@ -36,6 +36,12 @@ export function generate_semigroup(generators, multiply, eq, limit = -1) {
     }
     return ret;
 }
+export function is_closure(generators, multiply, eq) {
+    let limit = generators.length + 1;
+    // no need to generate the whole semigroup, just check if it is already closed
+    let closure = generate_semigroup(generators, multiply, eq, limit);
+    return closure.length == closure.length;
+}
 export function get_idempotent_power(item, multiply, eq, limit = -1) {
     let square = multiply(item, item);
     let power_t = item;
@@ -117,6 +123,10 @@ export function is_aperiodic(elements, multiply, eq) {
     return max_power;
 }
 export function is_monoid(elements, multiply, eq) {
+    if (!is_closure(elements, multiply, eq)) {
+        console.log("Not even a semigroup");
+        return [false, null];
+    }
     let idempotent_elements = get_all_idempotent_elements(elements, multiply, eq);
     console.log(idempotent_elements.length);
     for (let idempotent of idempotent_elements) {
