@@ -1,7 +1,7 @@
 import {cartesian_product} from "../math/set.js";
 import {get_sup} from "../util.js";
-import {generate_semigroup, get_all_idempotent_elements} from "../math/semigroup.js";
 import {array_eq} from "../math/math.js";
+import {generate_semigroup} from "../math/semigroup.js";
 
 export function get_all_prefixes(str: string): string[] {
     const prefixes: string[] = [];

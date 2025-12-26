@@ -104,34 +104,35 @@ export function semigroup_power<T>(base: T,
     }
 }
 
-export function get_definite_k<T>(elements: T[],
-                                  multiply: (a: T, b: T) => T,
-                                  eq: (a: T, b: T) => boolean): number {
+function get_definite_k_common<T>(
+    elements: T[],
+    multiply: (a: T, b: T) => T,
+    eq: (a: T, b: T) => boolean,
+    multiply_idempotent_on_right: boolean
+): number {
     let highest_idempotent_power = get_highest_idempotent_power(elements, multiply, eq)
     let candidates: T[] = elements.map(item => semigroup_power(item, highest_idempotent_power, multiply))
     for (let pair of cartesian_product<T>([elements, candidates])) {
         let element: T = pair[0]
         let candidate: T = pair[1]
-        if (!eq(multiply(element, candidate), candidate)) {
+        let product = multiply_idempotent_on_right ? multiply(element, candidate) : multiply(candidate, element)
+        if (!eq(product, candidate)) {
             return -1
         }
     }
     return highest_idempotent_power
 }
 
+export function get_definite_k<T>(elements: T[],
+                                  multiply: (a: T, b: T) => T,
+                                  eq: (a: T, b: T) => boolean): number {
+    return get_definite_k_common(elements, multiply, eq, true)
+}
+
 export function get_reverse_definite_k<T>(elements: T[],
                                           multiply: (a: T, b: T) => T,
                                           eq: (a: T, b: T) => boolean): number {
-    let highest_idempotent_power = get_highest_idempotent_power(elements, multiply, eq)
-    let candidates: T[] = elements.map(item => semigroup_power(item, highest_idempotent_power, multiply))
-    for (let pair of cartesian_product<T>([elements, candidates])) {
-        let element: T = pair[0]
-        let candidate: T = pair[1]
-        if (!eq(multiply(candidate, element), candidate)) {
-            return -1
-        }
-    }
-    return highest_idempotent_power
+    return get_definite_k_common(elements, multiply, eq, false)
 }
 
 export function is_aperiodic<T>(elements: T[],
@@ -153,4 +154,28 @@ export function is_aperiodic<T>(elements: T[],
     }
 
     return max_power
+}
+
+export function is_monoid<T>(elements: T[],
+                             multiply: (a: T, b: T) => T,
+                             eq: (a: T, b: T) => boolean): [boolean, T | null] {
+    let idempotent_elements: T[] = get_all_idempotent_elements(elements, multiply, eq)
+
+    console.log(idempotent_elements.length)
+
+    for (let idempotent of idempotent_elements) {
+        let is_identity = true
+        // find an element e, such that for all a in S, e*a = a*e = a
+        for (let element of elements) {
+            if (!eq(multiply(idempotent, element), element) || !eq(multiply(element, idempotent), element)) {
+                is_identity = false;
+                break;
+            }
+        }
+        if (is_identity) {
+            return [true, idempotent]
+        }
+    }
+    console.log("No identity element found")
+    return [false, null]
 }

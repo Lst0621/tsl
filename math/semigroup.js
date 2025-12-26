@@ -81,29 +81,24 @@ export function semigroup_power(base, exponent, multiply) {
         return multiply(multiply(half_power, half_power), base);
     }
 }
-export function get_definite_k(elements, multiply, eq) {
+function get_definite_k_common(elements, multiply, eq, multiply_idempotent_on_right) {
     let highest_idempotent_power = get_highest_idempotent_power(elements, multiply, eq);
     let candidates = elements.map(item => semigroup_power(item, highest_idempotent_power, multiply));
     for (let pair of cartesian_product([elements, candidates])) {
         let element = pair[0];
         let candidate = pair[1];
-        if (!eq(multiply(element, candidate), candidate)) {
+        let product = multiply_idempotent_on_right ? multiply(element, candidate) : multiply(candidate, element);
+        if (!eq(product, candidate)) {
             return -1;
         }
     }
     return highest_idempotent_power;
 }
+export function get_definite_k(elements, multiply, eq) {
+    return get_definite_k_common(elements, multiply, eq, true);
+}
 export function get_reverse_definite_k(elements, multiply, eq) {
-    let highest_idempotent_power = get_highest_idempotent_power(elements, multiply, eq);
-    let candidates = elements.map(item => semigroup_power(item, highest_idempotent_power, multiply));
-    for (let pair of cartesian_product([elements, candidates])) {
-        let element = pair[0];
-        let candidate = pair[1];
-        if (!eq(multiply(candidate, element), candidate)) {
-            return -1;
-        }
-    }
-    return highest_idempotent_power;
+    return get_definite_k_common(elements, multiply, eq, false);
 }
 export function is_aperiodic(elements, multiply, eq) {
     let max_power = 1;
@@ -120,4 +115,23 @@ export function is_aperiodic(elements, multiply, eq) {
         max_power = Math.max(max_power, power);
     }
     return max_power;
+}
+export function is_monoid(elements, multiply, eq) {
+    let idempotent_elements = get_all_idempotent_elements(elements, multiply, eq);
+    console.log(idempotent_elements.length);
+    for (let idempotent of idempotent_elements) {
+        let is_identity = true;
+        // find an element e, such that for all a in S, e*a = a*e = a
+        for (let element of elements) {
+            if (!eq(multiply(idempotent, element), element) || !eq(multiply(element, idempotent), element)) {
+                is_identity = false;
+                break;
+            }
+        }
+        if (is_identity) {
+            return [true, idempotent];
+        }
+    }
+    console.log("No identity element found");
+    return [false, null];
 }
