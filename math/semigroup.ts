@@ -193,3 +193,33 @@ export function is_monoid<T>(elements: T[],
     console.log("No identity element found")
     return [false, null]
 }
+
+export function is_group<T>(elements: T[],
+                            multiply: (a: T, b: T) => T,
+                            eq: (a: T, b: T) => boolean): [boolean, T | null] {
+
+    let [is_monoid_result, optional_identity_element] = is_monoid(elements, multiply, eq)
+    if (!is_monoid_result) {
+        console.log("Not a monoid, so not a group")
+        return [false, null]
+    }
+
+    let identity_element: T = optional_identity_element as T
+    for (let element of elements) {
+        let has_inverse = false
+        for (let other_element of elements) {
+            let product = multiply(element, other_element)
+            if (eq(product, element)) {
+                // in a group, ab=e then ba=e
+                has_inverse = eq(multiply(other_element, element), identity_element);
+                break
+            }
+        }
+
+        if (!has_inverse) {
+            return [false, null]
+        }
+    }
+
+    return [true, identity_element]
+}
