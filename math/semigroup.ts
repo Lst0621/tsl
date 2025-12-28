@@ -53,6 +53,26 @@ export function is_closure<T>(generators: T[],
     return closure.length == closure.length
 }
 
+export function is_associative<T>(elements: T[],
+                                  multiply: (a: T, b: T) => T,
+                                  eq: (a: T, b: T) => boolean) {
+    for (let [a, b] of cartesian_product([elements, elements])) {
+        let ab = multiply(a, b)
+        for (let c of elements) {
+            let abc_1 = multiply(ab, c)
+            let bc = multiply(b, c)
+            let abc_2 = multiply(a, bc)
+            if (!eq(abc_1, abc_2)) {
+                console.log("Not associative for " + a + ", " + b + ", " + c + ": " + abc_1 + " != " + abc_2)
+                return false
+            }
+        }
+    }
+
+    return true
+}
+
+
 export function get_idempotent_power<T>(item: T,
                                         multiply: (a: T, b: T) => T,
                                         eq: (a: T, b: T) => boolean,

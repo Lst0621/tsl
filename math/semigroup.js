@@ -42,6 +42,21 @@ export function is_closure(generators, multiply, eq) {
     let closure = generate_semigroup(generators, multiply, eq, limit);
     return closure.length == closure.length;
 }
+export function is_associative(elements, multiply, eq) {
+    for (let [a, b] of cartesian_product([elements, elements])) {
+        let ab = multiply(a, b);
+        for (let c of elements) {
+            let abc_1 = multiply(ab, c);
+            let bc = multiply(b, c);
+            let abc_2 = multiply(a, bc);
+            if (!eq(abc_1, abc_2)) {
+                console.log("Not associative for " + a + ", " + b + ", " + c + ": " + abc_1 + " != " + abc_2);
+                return false;
+            }
+        }
+    }
+    return true;
+}
 export function get_idempotent_power(item, multiply, eq, limit = -1) {
     let square = multiply(item, item);
     let power_t = item;
