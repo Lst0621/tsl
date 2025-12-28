@@ -152,17 +152,18 @@ export function is_group(elements, multiply, eq) {
         return [false, null];
     }
     let identity_element = optional_identity_element;
+    console.log("Found identity element: " + identity_element);
     for (let element of elements) {
         let has_inverse = false;
         for (let other_element of elements) {
             let product = multiply(element, other_element);
-            if (eq(product, element)) {
-                // in a group, ab=e then ba=e
+            if (eq(product, identity_element)) {
                 has_inverse = eq(multiply(other_element, element), identity_element);
                 break;
             }
         }
         if (!has_inverse) {
+            console.log("Element " + element + " has no inverse");
             return [false, null];
         }
     }
