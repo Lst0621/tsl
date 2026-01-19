@@ -1,3 +1,5 @@
+import { wasmMinus } from "../wasm_api.js";
+console.log(wasmMinus(10, 3)); // 7
 export function gcd(a_in, b_in) {
     let a = Math.abs(a_in);
     let b = Math.abs(b_in);

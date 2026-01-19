@@ -1,3 +1,8 @@
+import {wasmMinus} from "../wasm_api.js";
+
+console.log(wasmMinus(10, 3)); // 7
+
+
 export function gcd(a_in: number, b_in: number): number {
     let a: number = Math.abs(a_in);
     let b: number = Math.abs(b_in);
@@ -53,5 +58,3 @@ export function array_eq_2d<T>(a: T[][], b: T[][]): boolean {
     }
     return true;
 }
-
-
