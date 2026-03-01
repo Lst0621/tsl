@@ -1,8 +1,10 @@
 #include "comb.h"
+
 #include <algorithm>
 
 // NOLINTNEXTLINE(misc-no-recursion)
-int number_of_sequences(const std::vector<int>& arr, const std::vector<int>& seq) {
+int number_of_sequences(const std::vector<int>& arr,
+                        const std::vector<int>& seq) {
     // Check if seq is all zeros using std::all_of
     if (std::all_of(seq.begin(), seq.end(), [](int val) { return val == 0; })) {
         return 1;
