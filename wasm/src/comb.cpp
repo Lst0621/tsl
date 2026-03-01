@@ -1,42 +1,22 @@
 #include "comb.h"
 
 #include <algorithm>
-#include <cmath>
 #include <functional>
 #include <iostream>
 #include <unordered_map>
 
-// Custom hash function for std::vector<int>
-namespace std {
-template <>
-struct hash<std::vector<int>> {
-    size_t operator()(const std::vector<int>& v) const {
-        // Golden ratio constant: 2^32 / φ where φ = (1 + sqrt(5)) / 2
-        const double phi = (1.0 + std::sqrt(5.0)) / 2.0;
-        const size_t golden_ratio =
-            static_cast<size_t>(std::pow(2.0, 32.0) / phi);
-
-        size_t hash = 0;
-        for (int i : v) {
-            hash ^= std::hash<int>()(i) + golden_ratio + (hash << 6) +
-                    (hash >> 2);
-        }
-        return hash;
-    }
-};
-}  // namespace std
+#include "helper.h"
 
 // Recursive helper function that modifies seq in-place with memoization
 static int number_of_sequences_helper(
     const std::vector<int>& arr, std::vector<int>& seq,
-    std::unordered_map<std::vector<int>, int>& memo) {
-    // Check if result is already cached
+    std::unordered_map<std::vector<int>, int, vector_hash<int>>& memo) {
     auto it = memo.find(seq);
     if (it != memo.end()) {
         return it->second;
     }
 
-    // Check if seq is all zeros using std::all_of
+    // ...existing code...
     if (std::all_of(seq.begin(), seq.end(),
                     [](const int x) { return x == 0; })) {
         return 1;
@@ -78,6 +58,6 @@ static int number_of_sequences_helper(
 int number_of_sequences(const std::vector<int>& arr,
                         const std::vector<int>& seq) {
     std::vector<int> seq_copy = seq;
-    std::unordered_map<std::vector<int>, int> memo;
+    std::unordered_map<std::vector<int>, int, vector_hash<int>> memo;
     return number_of_sequences_helper(arr, seq_copy, memo);
 }

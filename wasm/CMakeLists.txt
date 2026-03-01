@@ -8,6 +8,7 @@ add_executable(wasm_sample
         src/main.cpp
         src/comb.cpp
         src/comb.h
+        src/helper.h
 )
 
 
