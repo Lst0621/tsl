@@ -5,9 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXECUTABLE_SUFFIX ".js")
 
 add_executable(wasm_sample
-    src/main.cpp
-    src/add.cpp
-    src/minus.cpp
+        src/main.cpp
+        src/add.cpp
+        src/minus.cpp
+        src/comb.cpp
+        src/comb.h
 )
 
 
@@ -19,5 +21,5 @@ target_link_options(wasm_sample PRIVATE
 )
 
 target_link_options(wasm_sample PRIVATE
-    -sEXPORTED_FUNCTIONS=_wasm_add,_wasm_minus
+    -sEXPORTED_FUNCTIONS=_wasm_add,_wasm_minus,_wasm_number_of_sequences
 )
