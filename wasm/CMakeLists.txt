@@ -12,10 +12,11 @@ add_executable(wasm_sample
 
 
 target_link_options(wasm_sample PRIVATE
-    -sWASM=1
-    -sMODULARIZE=1
-    -sEXPORT_ES6=1
-    -sENVIRONMENT=web
+        -sWASM=1
+        -sMODULARIZE=1
+        -sEXPORT_ES6=1
+        -sENVIRONMENT=web
+        -O1
 )
 
 target_link_options(wasm_sample PRIVATE
