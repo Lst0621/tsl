@@ -53,7 +53,7 @@ function allocateMemory(HEAP32, arr32, seq32, extraSize = 0) {
  * High-level wrapper: accepts plain arrays or Int32Array.
  * Allocates space in WASM memory, copies data, calls the low-level function.
  */
-export function wasmNumberOfSequences(arr, seq) {
+export function wasm_number_of_sequences(arr, seq) {
     const HEAP32 = getHeap32();
     const arr32 = toInt32Array(arr);
     const seq32 = toInt32Array(seq);
@@ -75,7 +75,7 @@ export function wasmNumberOfSequences(arr, seq) {
  * Dimensions correspond to (seq[i] + 1) for each sequence value.
  * Data is in lexicographic order as produced by C++.
  */
-function buildMultiDimensionalArray(flatData, dimensions) {
+function build_multi_dimensional_array(flatData, dimensions) {
     if (dimensions.length === 0) {
         return flatData[0];
     }
@@ -89,7 +89,7 @@ function buildMultiDimensionalArray(flatData, dimensions) {
     const result = [];
     for (let i = 0; i <= currentDim; i++) {
         const subData = flatData.slice(i * subArraySize, (i + 1) * subArraySize);
-        result.push(buildMultiDimensionalArray(subData, remainingDims));
+        result.push(build_multi_dimensional_array(subData, remainingDims));
     }
     return result;
 }
@@ -100,7 +100,7 @@ function buildMultiDimensionalArray(flatData, dimensions) {
  * Data is filled in lexicographic order (rightmost dimension changes fastest).
  * Allocates space in WASM memory, copies data, calls the low-level function.
  */
-export function wasmNumberOfSequencesAll(arr, seq) {
+export function wasm_number_of_sequences_all(arr, seq) {
     const HEAP32 = getHeap32();
     const arr32 = toInt32Array(arr);
     const seq32 = toInt32Array(seq);
@@ -130,7 +130,7 @@ export function wasmNumberOfSequencesAll(arr, seq) {
     }
     // Build multi-dimensional array with dimensions matching seq values
     const dimensions = new Int32Array(seq32);
-    return buildMultiDimensionalArray(flatData, dimensions);
+    return build_multi_dimensional_array(flatData, dimensions);
 }
 /**
  * Get the size of the general linear group GL(n, m).
@@ -140,7 +140,7 @@ export function wasmNumberOfSequencesAll(arr, seq) {
  * @param m Modulus for elements (elements will be 0 to m-1)
  * @return Number of invertible matrices in GL(n, m)
  */
-export function wasmGetGlNZmSize(n, m) {
+export function wasm_get_gl_n_zm_size(n, m) {
     if (!moduleInstance) {
         throw new Error("WASM module not initialized. Call and await initWasm() before using WASM functions.");
     }
@@ -153,7 +153,7 @@ export function wasmGetGlNZmSize(n, m) {
  * @param n Size of the square matrix (n×n). Total elements should be n²
  * @return Determinant of the matrix
  */
-export function wasmMatrixDet(data, n) {
+export function wasm_matrix_det(data, n) {
     const HEAP32 = getHeap32();
     const data32 = toInt32Array(data);
     // Validate that we have exactly n² elements

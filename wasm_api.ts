@@ -71,7 +71,7 @@ function allocateMemory(HEAP32: Int32Array, arr32: Int32Array, seq32: Int32Array
  * High-level wrapper: accepts plain arrays or Int32Array.
  * Allocates space in WASM memory, copies data, calls the low-level function.
  */
-export function wasmNumberOfSequences(arr: readonly number[] | Int32Array, seq: readonly number[] | Int32Array): number {
+export function wasm_number_of_sequences(arr: readonly number[] | Int32Array, seq: readonly number[] | Int32Array): number {
     const HEAP32 = getHeap32();
     const arr32 = toInt32Array(arr);
     const seq32 = toInt32Array(seq);
@@ -99,7 +99,7 @@ export function wasmNumberOfSequences(arr: readonly number[] | Int32Array, seq: 
  * Dimensions correspond to (seq[i] + 1) for each sequence value.
  * Data is in lexicographic order as produced by C++.
  */
-function buildMultiDimensionalArray(flatData: Int32Array, dimensions: Int32Array): any {
+function build_multi_dimensional_array(flatData: Int32Array, dimensions: Int32Array): any {
     if (dimensions.length === 0) {
         return flatData[0];
     }
@@ -116,7 +116,7 @@ function buildMultiDimensionalArray(flatData: Int32Array, dimensions: Int32Array
     const result = [];
     for (let i = 0; i <= currentDim; i++) {
         const subData = flatData.slice(i * subArraySize, (i + 1) * subArraySize);
-        result.push(buildMultiDimensionalArray(subData, remainingDims));
+        result.push(build_multi_dimensional_array(subData, remainingDims));
     }
 
     return result;
@@ -129,7 +129,7 @@ function buildMultiDimensionalArray(flatData: Int32Array, dimensions: Int32Array
  * Data is filled in lexicographic order (rightmost dimension changes fastest).
  * Allocates space in WASM memory, copies data, calls the low-level function.
  */
-export function wasmNumberOfSequencesAll(arr: readonly number[] | Int32Array, seq: readonly number[] | Int32Array): any {
+export function wasm_number_of_sequences_all(arr: readonly number[] | Int32Array, seq: readonly number[] | Int32Array): any {
     const HEAP32 = getHeap32();
     const arr32 = toInt32Array(arr);
     const seq32 = toInt32Array(seq);
@@ -168,7 +168,7 @@ export function wasmNumberOfSequencesAll(arr: readonly number[] | Int32Array, se
 
     // Build multi-dimensional array with dimensions matching seq values
     const dimensions = new Int32Array(seq32);
-    return buildMultiDimensionalArray(flatData, dimensions);
+    return build_multi_dimensional_array(flatData, dimensions);
 }
 
 /**
@@ -179,7 +179,7 @@ export function wasmNumberOfSequencesAll(arr: readonly number[] | Int32Array, se
  * @param m Modulus for elements (elements will be 0 to m-1)
  * @return Number of invertible matrices in GL(n, m)
  */
-export function wasmGetGlNZmSize(n: number, m: number): number {
+export function wasm_get_gl_n_zm_size(n: number, m: number): number {
     if (!moduleInstance) {
         throw new Error(
             "WASM module not initialized. Call and await initWasm() before using WASM functions."
@@ -195,7 +195,7 @@ export function wasmGetGlNZmSize(n: number, m: number): number {
  * @param n Size of the square matrix (n×n). Total elements should be n²
  * @return Determinant of the matrix
  */
-export function wasmMatrixDet(data: readonly number[] | Int32Array, n: number): number {
+export function wasm_matrix_det(data: readonly number[] | Int32Array, n: number): number {
     const HEAP32 = getHeap32();
     const data32 = toInt32Array(data);
 
