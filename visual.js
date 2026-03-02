@@ -52,3 +52,13 @@ export function matrix_to_cell(arr) {
     </div>
     `;
 }
+export function adjust_table_cell_width(table, cellWidth = "60px", padding = "8px") {
+    table.style.tableLayout = "fixed";
+    table.style.width = "auto";
+    const allCells = table.querySelectorAll('td');
+    allCells.forEach((cell) => {
+        cell.style.width = cellWidth;
+        cell.style.padding = padding;
+        cell.style.textAlign = "center";
+    });
+}

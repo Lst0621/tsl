@@ -90,3 +90,15 @@ export function matrix_to_cell(arr: any[][]): string {
     </div>
     `;
 }
+
+export function adjust_table_cell_width(table: HTMLTableElement, cellWidth: string = "60px", padding: string = "8px") {
+    table.style.tableLayout = "fixed";
+    table.style.width = "auto";
+
+    const allCells = table.querySelectorAll('td');
+    allCells.forEach((cell: HTMLTableCellElement) => {
+        cell.style.width = cellWidth;
+        cell.style.padding = padding;
+        cell.style.textAlign = "center";
+    });
+}
