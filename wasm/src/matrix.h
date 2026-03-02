@@ -1,9 +1,50 @@
 #pragma once
 
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <functional>
+
+/**
+ * Helper to detect if T has a default constructor
+ * Used for compile-time selection of zero initialization method
+ */
+template <typename T>
+class has_default_constructor {
+    template <typename U, typename = decltype(U())>
+    static std::true_type test(int);
+
+    template <typename U>
+    static std::false_type test(...);
+
+   public:
+    static constexpr bool value = decltype(test<T>(0))::value;
+};
+
+/**
+ * Helper to create a zero value for type T
+ * Tries default constructor first, falls back to subtraction
+ * Note: For subtraction fallback, pass any existing element
+ */
+template <typename T, bool HasDefaultConstructor>
+struct ZeroValue;
+
+// Specialization: T has default constructor
+template <typename T>
+struct ZeroValue<T, true> {
+    static T create() {
+        return T();
+    }
+};
+
+// Specialization: T doesn't have default constructor, use subtraction
+// This version requires a sample element
+template <typename T>
+struct ZeroValue<T, false> {
+    static T create(const T& sample) {
+        return sample - sample;
+    }
+};
 
 /**
  * Generic matrix class using vector<vector<T>> storage.
@@ -19,13 +60,37 @@ class Matrix {
 
    public:
     /**
-     * Constructor: creates an m x n matrix
+     * Constructor: creates an m x n matrix with smart zero initialization
      * @param m Number of rows
      * @param n Number of columns
-     * @param default_value Default value for all elements (default-constructed
-     * if not provided)
+     * Uses compile-time check: if T has default constructor, uses T();
+     * otherwise uses element - element
      */
-    Matrix(size_t m, size_t n, const T& default_value = T())
+    explicit Matrix(size_t m, size_t n) : rows(m), cols(n) {
+        if (m == 0 || n == 0) {
+            throw std::invalid_argument("Matrix dimensions must be positive");
+        }
+        // Use compile-time check to determine how to create zero value
+        if constexpr (has_default_constructor<T>::value) {
+            T zero = ZeroValue<T, true>::create();
+            data.assign(m, std::vector<T>(n, zero));
+        } else {
+            // This path requires at least one element to exist - would need to
+            // be called differently For now, we throw an error if no default
+            // constructor and no explicit value provided
+            throw std::invalid_argument(
+                "Cannot create matrix without explicit default value for types "
+                "without default constructor");
+        }
+    }
+
+    /**
+     * Constructor: creates an m x n matrix with explicit default value
+     * @param m Number of rows
+     * @param n Number of columns
+     * @param default_value Default value for all elements
+     */
+    explicit Matrix(size_t m, size_t n, const T& default_value)
         : rows(m), cols(n) {
         if (m == 0 || n == 0) {
             throw std::invalid_argument("Matrix dimensions must be positive");
@@ -306,7 +371,8 @@ class Matrix {
      */
     T trace() const {
         if (!is_square()) {
-            throw std::invalid_argument("Trace is only defined for square matrices");
+            throw std::invalid_argument(
+                "Trace is only defined for square matrices");
         }
         T result = data[0][0];
         for (size_t i = 1; i < rows; i++) {
@@ -322,130 +388,137 @@ class Matrix {
      */
     T determinant() const {
         if (!is_square()) {
-            throw std::invalid_argument("Determinant is only defined for square matrices");
+            throw std::invalid_argument(
+                "Determinant is only defined for square matrices");
         }
 
-        size_t n = rows;
-
-        // Base cases
-        if (n == 1) {
-            return data[0][0];
-        }
-        if (n == 2) {
-            return data[0][0] * data[1][1] - data[0][1] * data[1][0];
-        }
-
-        // Laplace expansion along first row
-        T det = data[0][0] * determinant_recursive(0, 0, n - 1);
-        for (size_t j = 1; j < n; j++) {
-            T cofactor = determinant_recursive(0, j, n - 1);
-
-            // Alternate signs based on column index
-            if (j % 2 == 0) {
-                det = det + (data[0][j] * cofactor);
-            } else {
-                det = det - (data[0][j] * cofactor);
-            }
-        }
-
-        return det;
+        std::vector<int> skip_rows(rows, 0);
+        std::vector<int> skip_cols(cols, 0);
+        return determinant_recursive(skip_rows, skip_cols);
     }
 
    private:
     /**
      * Helper function to calculate determinant for a submatrix
-     * Skips the specified row and column
-     * Used internally to avoid creating intermediate minor matrices
+     * Uses integer arrays to track which rows/columns are skipped
+     * 0 = not skipped, 1 = skipped
+     * This properly handles nested recursive calls
      *
-     * @param skip_row Row to skip
-     * @param skip_col Column to skip
-     * @param size Size of the original matrix (before removing row/col)
+     * @param skip_rows Integer vector marking which rows to skip (0 or 1)
+     * @param skip_cols Integer vector marking which columns to skip (0 or 1)
      */
-    T determinant_recursive(size_t skip_row, size_t skip_col, size_t size) const {
+    T determinant_recursive(std::vector<int>& skip_rows,
+                            std::vector<int>& skip_cols) const {
+        // Count non-skipped rows and columns
+        size_t active_size = 0;
+        for (size_t i = 0; i < rows; i++) {
+            if (skip_rows[i] == 0) {
+                active_size++;
+            }
+        }
+
         // Base case: 1x1 submatrix
-        if (size == 1) {
-            // Find the one remaining element (not in skip_row or skip_col)
+        if (active_size == 1) {
             for (size_t i = 0; i < rows; i++) {
-                if (i == skip_row) {
-                    continue;
-                }
-                for (size_t j = 0; j < cols; j++) {
-                    if (j == skip_col) {
-                        continue;
+                if (skip_rows[i] == 0) {
+                    for (size_t j = 0; j < cols; j++) {
+                        if (skip_cols[j] == 0) {
+                            return data[i][j];
+                        }
                     }
-                    return data[i][j];
                 }
             }
         }
 
         // Base case: 2x2 submatrix
-        if (size == 2) {
-            std::vector<std::vector<T>> elements;
+        if (active_size == 2) {
+            std::vector<size_t> active_rows, active_cols;
             for (size_t i = 0; i < rows; i++) {
-                if (i == skip_row) {
-                    continue;
-                }
-                std::vector<T> row;
-                for (size_t j = 0; j < cols; j++) {
-                    if (j == skip_col) {
-                        continue;
-                    }
-                    row.push_back(data[i][j]);
-                }
-                if (!row.empty()) {
-                    elements.push_back(row);
+                if (skip_rows[i] == 0) {
+                    active_rows.push_back(i);
                 }
             }
-            if (elements.size() == 2 && elements[0].size() == 2) {
-                return elements[0][0] * elements[1][1] - elements[0][1] * elements[1][0];
+            for (size_t j = 0; j < cols; j++) {
+                if (skip_cols[j] == 0) {
+                    active_cols.push_back(j);
+                }
+            }
+
+            if (active_rows.size() == 2 && active_cols.size() == 2) {
+                return data[active_rows[0]][active_cols[0]] *
+                           data[active_rows[1]][active_cols[1]] -
+                       data[active_rows[0]][active_cols[1]] *
+                           data[active_rows[1]][active_cols[0]];
             }
         }
 
-        // Recursive case: use Laplace expansion
-        T det = data[0][0] * determinant_recursive(0, 0, size - 1);  // Initialize with first term
-
-        // Iterate through first available row (not skip_row)
-        bool first_term = true;
+        // Recursive case: Laplace expansion along first active row
+        // Find first active row
+        size_t expand_row = 0;
         for (size_t i = 0; i < rows; i++) {
-            if (i == skip_row) {
+            if (skip_rows[i] == 0) {
+                expand_row = i;
+                break;
+            }
+        }
+
+        // Expand along this row - find first active column
+        size_t first_col = 0;
+        for (size_t j = 0; j < cols; j++) {
+            if (skip_cols[j] == 0) {
+                first_col = j;
+                break;
+            }
+        }
+
+        // Initialize det with zero value using smart helper
+        // Uses element - element since ModularNumber and other custom types may
+        // not have default constructor
+        T det = ZeroValue<T, false>::create(data[expand_row][0]);
+
+        // Mark and compute first term
+        skip_rows[expand_row] = 1;
+        skip_cols[first_col] = 1;
+        T cofactor = determinant_recursive(skip_rows, skip_cols);
+        det = det + (data[expand_row][first_col] * cofactor);
+        skip_rows[expand_row] = 0;
+        skip_cols[first_col] = 0;
+
+        // Expand along remaining columns in this row
+        for (size_t j = first_col + 1; j < cols; j++) {
+            if (skip_cols[j] == 1) {
                 continue;
             }
 
-            // Expand along this row
-            for (size_t j = 0; j < cols; j++) {
-                if (j == skip_col) {
-                    continue;
-                }
+            // Mark this row and column as skipped
+            skip_rows[expand_row] = 1;
+            skip_cols[j] = 1;
 
-                // Skip first element as it's already processed
-                if (first_term) {
-                    first_term = false;
-                    continue;
-                }
+            T cofactor_j = determinant_recursive(skip_rows, skip_cols);
+            T term = data[expand_row][j] * cofactor_j;
 
-                T cofactor = determinant_recursive(i, j, size - 1);
-                T term = data[i][j] * cofactor;
+            // Unmark for next iteration
+            skip_rows[expand_row] = 0;
+            skip_cols[j] = 0;
 
-                // Alternate signs based on position
-                size_t pos_i = 0, pos_j = 0;
-                for (size_t ii = 0; ii < i; ii++) {
-                    if (ii != skip_row) {
-                        pos_i++;
-                    }
-                }
-                for (size_t jj = 0; jj < j; jj++) {
-                    if (jj != skip_col) {
-                        pos_j++;
-                    }
-                }
-
-                if ((pos_i + pos_j) % 2 == 0) {
-                    det = det + term;
-                } else {
-                    det = det - term;
+            // Calculate sign based on position in submatrix
+            size_t row_pos = 0, col_pos = 0;
+            for (size_t ii = 0; ii < expand_row; ii++) {
+                if (skip_rows[ii] == 0) {
+                    row_pos++;
                 }
             }
-            break;  // Only use first available row
+            for (size_t jj = 0; jj < j; jj++) {
+                if (skip_cols[jj] == 0) {
+                    col_pos++;
+                }
+            }
+
+            if ((row_pos + col_pos) % 2 == 0) {
+                det = det + term;
+            } else {
+                det = det - term;
+            }
         }
 
         return det;
@@ -453,3 +526,52 @@ class Matrix {
 
    private:
 };
+
+/**
+ * Convert a 1D container to Matrix
+ * Requires both m and n with verification that size == m*n
+ *
+ * @tparam T Element type
+ * @tparam ContainerT Container type (any type with .size() and [] access)
+ * @param data 1D data container
+ * @param m Number of rows
+ * @param n Number of columns
+ * @return Matrix with dimensions m x n
+ */
+template <typename T, typename ContainerT>
+Matrix<T> to_matrix(const ContainerT& data, size_t m, size_t n) {
+    if (data.size() != m * n) {
+        throw std::invalid_argument("Container size must equal m * n");
+    }
+
+    std::vector<std::vector<T>> mat_data;
+    for (size_t i = 0; i < m; i++) {
+        std::vector<T> row;
+        for (size_t j = 0; j < n; j++) {
+            row.push_back(data[i * n + j]);
+        }
+        mat_data.push_back(row);
+    }
+    return Matrix<T>(mat_data);
+}
+
+/**
+ * Convert a 1D container to Matrix
+ * Infers n from size/m (assumes size is divisible by m)
+ *
+ * @tparam T Element type
+ * @tparam ContainerT Container type (any type with .size() and [] access)
+ * @param data 1D data container
+ * @param m Number of rows
+ * @return Matrix with dimensions m x (size/m)
+ */
+template <typename T, typename ContainerT>
+Matrix<T> to_matrix_infer_cols(const ContainerT& data, size_t m) {
+    if (data.size() % m != 0) {
+        throw std::invalid_argument("Container size must be divisible by m");
+    }
+    size_t n = data.size() / m;
+
+    // Call to_matrix with inferred n
+    return to_matrix<T, ContainerT>(data, m, n);
+}

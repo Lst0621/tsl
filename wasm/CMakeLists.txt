@@ -27,5 +27,5 @@ target_link_options(wasm_sample PRIVATE
 )
 
 target_link_options(wasm_sample PRIVATE
-    -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size
+    -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_matrix_det
 )

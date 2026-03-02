@@ -1,9 +1,11 @@
 #include <emscripten/emscripten.h>
 
+#include <cmath>
 #include <numeric>
 
 #include "comb.h"
 #include "general_linear_group.h"
+#include "matrix.h"
 
 extern "C" {
 
@@ -55,5 +57,22 @@ int* wasm_number_of_sequences_all(int* arr, int arr_len, int* sequence,
 EMSCRIPTEN_KEEPALIVE
 int wasm_get_gl_n_zm_size(int n, int m) {
     return static_cast<int>(get_gl_n_zm_size(n, m));
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_matrix_det(int* data, int n) {
+    // For square matrices: data should contain n*n elements
+    int size = n * n;
+
+    // Convert raw int array to vector
+    std::vector<int> data_vec(data, data + size);
+
+    // Convert vector to Matrix<int>
+    Matrix<int> mat = to_matrix<int, std::vector<int>>(data_vec, n, n);
+
+    // Calculate determinant
+    int det = mat.determinant();
+
+    return det;
 }
 }

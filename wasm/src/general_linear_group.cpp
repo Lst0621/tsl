@@ -8,23 +8,16 @@
  */
 static void fill_matrices_recursive(
     std::vector<Matrix<ModularNumber>>& result,
-    std::vector<std::vector<ModularNumber>>& current_data,
-    size_t n,
-    size_t m,
+    std::vector<std::vector<ModularNumber>>& current_data, size_t n, size_t m,
     size_t position) {
-
     if (position == n * n) {
         // Create matrix from filled data and check determinant
-        Matrix<ModularNumber> mat(current_data);
+        Matrix mat(current_data);
 
         // Check if determinant is non-zero
-        try {
-            ModularNumber det = mat.determinant();
-            if (det.get_value() != 0) {
-                result.push_back(mat);
-            }
-        } catch (...) {
-            // Skip matrices that cause issues in determinant calculation
+        ModularNumber det = mat.determinant();
+        if (det.get_value() != 0) {
+            result.push_back(mat);
         }
         return;
     }
@@ -72,7 +65,8 @@ std::vector<Matrix<ModularNumber>> get_gl_n_zm(size_t n, size_t m) {
         throw std::invalid_argument("Matrix size and modulus must be positive");
     }
 
-    // This calls generate_all_matrices which already filters by non-zero determinant
+    // This calls generate_all_matrices which already filters by non-zero
+    // determinant
     return generate_all_matrices(n, m);
 }
 
@@ -85,10 +79,9 @@ size_t get_gl_n_zm_size(size_t n, size_t m) {
     }
 
     // Generate all matrices and return their count
-    std::vector<Matrix<ModularNumber>> gl_matrices = generate_all_matrices(n, m);
-    std::cout<< "Generated " << gl_matrices.size() << " invertible matrices in GL(" << n
-             << ", " << m << ")\n";
+    std::vector<Matrix<ModularNumber>> gl_matrices =
+        generate_all_matrices(n, m);
+    std::cout << "Generated " << gl_matrices.size()
+              << " invertible matrices in GL(" << n << ", " << m << ")\n";
     return gl_matrices.size();
 }
-
-

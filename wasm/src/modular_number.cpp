@@ -32,7 +32,6 @@ bool ModularNumber::is_prime(long long n) {
     return true;
 }
 
-
 /**
  * Constructor: creates a ModularNumber with given value and modulus
  * Normalizes value to be in range [0, modulus)

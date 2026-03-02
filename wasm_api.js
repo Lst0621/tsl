@@ -146,3 +146,30 @@ export function wasmGetGlNZmSize(n, m) {
     }
     return moduleInstance._wasm_get_gl_n_zm_size(n, m);
 }
+/**
+ * Calculate the determinant of a square matrix.
+ *
+ * @param data Array of integers representing the matrix in row-major order
+ * @param n Size of the square matrix (n×n). Total elements should be n²
+ * @return Determinant of the matrix
+ */
+export function wasmMatrixDet(data, n) {
+    const HEAP32 = getHeap32();
+    const data32 = toInt32Array(data);
+    // Validate that we have exactly n² elements
+    const totalSize = n * n;
+    if (data32.length !== totalSize) {
+        throw new Error(`Expected ${totalSize} elements for a ${n}×${n} matrix, got ${data32.length}`);
+    }
+    // Allocate memory in WASM heap
+    const dataOffsetInInts = 1024;
+    if (HEAP32.length < dataOffsetInInts + totalSize) {
+        throw new Error("WASM memory exhausted");
+    }
+    // Copy data to HEAP32
+    copyToHeap(HEAP32, data32, dataOffsetInInts);
+    // Convert offset from int32 indices to byte offset
+    const dataPtr = dataOffsetInInts * 4;
+    // Call the WASM function
+    return moduleInstance._wasm_matrix_det(dataPtr, n);
+}

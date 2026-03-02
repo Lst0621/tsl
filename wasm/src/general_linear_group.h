@@ -1,14 +1,16 @@
 #pragma once
 
 #include <vector>
+
 #include "matrix.h"
 #include "modular_number.h"
 
 /**
  * General Linear Group GL(n, m) - All invertible n×n matrices over Z_m
  *
- * An n×n matrix is invertible if and only if its determinant is non-zero (mod m).
- * For prime modulus m, this includes all matrices with non-zero determinant.
+ * An n×n matrix is invertible if and only if its determinant is non-zero (mod
+ * m). For prime modulus m, this includes all matrices with non-zero
+ * determinant.
  */
 
 /**
@@ -30,7 +32,8 @@ std::vector<Matrix<ModularNumber>> get_gl_n_zm(size_t n, size_t m);
  * Get the size (number of elements) of the general linear group GL(n, m)
  *
  * Returns the count of all invertible n×n matrices with elements in Z_m.
- * This is more efficient than get_gl_n_zm as it doesn't need to store all matrices.
+ * This is more efficient than get_gl_n_zm as it doesn't need to store all
+ * matrices.
  *
  * @param n Size of the matrix (n×n)
  * @param m Modulus for elements
