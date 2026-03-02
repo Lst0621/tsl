@@ -3,6 +3,7 @@
 #include <numeric>
 
 #include "comb.h"
+#include "general_linear_group.h"
 
 extern "C" {
 
@@ -49,5 +50,10 @@ int* wasm_number_of_sequences_all(int* arr, int arr_len, int* sequence,
     fill_output(seq, 0, idx);
 
     return output;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_get_gl_n_zm_size(int n, int m) {
+    return static_cast<int>(get_gl_n_zm_size(n, m));
 }
 }

@@ -9,6 +9,12 @@ add_executable(wasm_sample
         src/comb.cpp
         src/comb.h
         src/helper.h
+        src/modular_number.cpp
+        src/modular_number.h
+        src/semigroup.h
+        src/matrix.h
+        src/general_linear_group.h
+        src/general_linear_group.cpp
 )
 
 
@@ -21,5 +27,5 @@ target_link_options(wasm_sample PRIVATE
 )
 
 target_link_options(wasm_sample PRIVATE
-    -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all
+    -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size
 )

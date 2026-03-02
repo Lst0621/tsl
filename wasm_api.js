@@ -132,3 +132,17 @@ export function wasmNumberOfSequencesAll(arr, seq) {
     const dimensions = new Int32Array(seq32);
     return buildMultiDimensionalArray(flatData, dimensions);
 }
+/**
+ * Get the size of the general linear group GL(n, m).
+ * Returns the count of all invertible n×n matrices with elements in Z_m.
+ *
+ * @param n Size of the matrix (n×n)
+ * @param m Modulus for elements (elements will be 0 to m-1)
+ * @return Number of invertible matrices in GL(n, m)
+ */
+export function wasmGetGlNZmSize(n, m) {
+    if (!moduleInstance) {
+        throw new Error("WASM module not initialized. Call and await initWasm() before using WASM functions.");
+    }
+    return moduleInstance._wasm_get_gl_n_zm_size(n, m);
+}
