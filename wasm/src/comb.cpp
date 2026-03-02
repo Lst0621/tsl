@@ -55,8 +55,42 @@ static int number_of_sequences_helper(
 
 // Top-level function - makes ONE copy then delegates to helper
 int number_of_sequences(const std::vector<int>& arr,
-                        const std::vector<int>& seq) {
-    std::vector<int> seq_copy = seq;
+                        const std::vector<int>& sums) {
+    std::vector<int> seq_copy = sums;
     std::unordered_map<std::vector<int>, int, vector_hash<int>> memo;
     return number_of_sequences_helper(arr, seq_copy, memo);
+}
+
+// Helper function to recursively generate all cartesian product combinations
+static void generate_combinations(
+    const std::vector<int>& arr, const std::vector<int>& sums,
+    std::vector<int>& seq, size_t pos,
+    std::unordered_map<std::vector<int>, int, vector_hash<int>>& memo,
+    std::unordered_map<std::vector<int>, int, vector_hash<int>>& results) {
+    if (pos == sums.size()) {
+        // Call number_of_sequences_helper directly with shared memo cache
+        std::vector<int> seq_copy = seq;
+        results[seq] = number_of_sequences_helper(arr, seq_copy, memo);
+        return;
+    }
+
+    // Try all values from 0 to sums[pos] (inclusive)
+    for (int val = 0; val <= sums[pos]; ++val) {
+        seq[pos] = val;
+        generate_combinations(arr, sums, seq, pos + 1, memo, results);
+    }
+}
+
+// Generate all cartesian product combinations of sequences and compute results
+std::unordered_map<std::vector<int>, int, vector_hash<int>>
+number_of_sequences_all(const std::vector<int>& arr,
+                        const std::vector<int>& sums) {
+    std::unordered_map<std::vector<int>, int, vector_hash<int>> results;
+    std::unordered_map<std::vector<int>, int, vector_hash<int>> memo;
+
+    // Start generation with a vector sized to match sums
+    std::vector<int> seq(sums.size(), 0);
+    generate_combinations(arr, sums, seq, 0, memo, results);
+
+    return results;
 }

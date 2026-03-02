@@ -10,47 +10,125 @@ function initWasm() {
 }
 await initWasm();
 /**
- * High-level wrapper: accepts plain arrays or Int32Array.
- * Allocates space in WASM memory, copies data, calls the low-level function.
+ * Helper: Verify module is initialized and return HEAP32
  */
-export function wasmNumberOfSequences(arr, seq) {
+function getHeap32() {
     if (!moduleInstance) {
-        throw new Error("WASM module not initialized. Call and await initWasm() before using wasmNumberOfSequences().");
+        throw new Error("WASM module not initialized. Call and await initWasm() before using WASM functions.");
     }
-    // Convert to Int32Array if needed
-    const arr32 = arr instanceof Int32Array ? arr : new Int32Array(arr);
-    const seq32 = seq instanceof Int32Array ? seq : new Int32Array(seq);
-    if (arr32.length === 0 || seq32.length === 0) {
-        return 0;
-    }
-    // Get the Emscripten module's HEAP32 view (this is exposed by Emscripten)
     const m = moduleInstance;
     const HEAP32 = m.HEAP32;
     if (!HEAP32) {
         throw new Error("Cannot access WASM module HEAP32");
     }
-    // Calculate memory allocation (use a safe offset in the heap)
-    const arrBytes = arr32.length * 4;
-    const seqBytes = seq32.length * 4;
-    // Emscripten allocates memory starting from lower addresses
-    // Use a safe offset: allocate at multiples of heap size for safety
-    // For small data, use a fixed safe location (after common static data)
-    const arrOffsetInInts = 1024; // Safe offset in int32s
+    return HEAP32;
+}
+/**
+ * Helper: Convert input to Int32Array
+ */
+function toInt32Array(input) {
+    return input instanceof Int32Array ? input : new Int32Array(input);
+}
+/**
+ * Helper: Copy array data into HEAP32 at given offset
+ */
+function copyToHeap(HEAP32, data, offsetInInts) {
+    for (let i = 0; i < data.length; i++) {
+        HEAP32[offsetInInts + i] = data[i];
+    }
+}
+/**
+ * Helper: Calculate safe memory offsets and verify bounds
+ */
+function allocateMemory(HEAP32, arr32, seq32, extraSize = 0) {
+    const arrOffsetInInts = 1024;
     const seqOffsetInInts = arrOffsetInInts + arr32.length;
-    // Verify we're within bounds
-    if (HEAP32.length < seqOffsetInInts + seq32.length) {
+    const outputOffsetInInts = seqOffsetInInts + seq32.length;
+    if (HEAP32.length < outputOffsetInInts + extraSize) {
         throw new Error("WASM memory exhausted");
     }
+    return { arrOffsetInInts, seqOffsetInInts, outputOffsetInInts };
+}
+/**
+ * High-level wrapper: accepts plain arrays or Int32Array.
+ * Allocates space in WASM memory, copies data, calls the low-level function.
+ */
+export function wasmNumberOfSequences(arr, seq) {
+    const HEAP32 = getHeap32();
+    const arr32 = toInt32Array(arr);
+    const seq32 = toInt32Array(seq);
+    if (arr32.length === 0 || seq32.length === 0) {
+        return 0;
+    }
+    const { arrOffsetInInts, seqOffsetInInts } = allocateMemory(HEAP32, arr32, seq32);
     // Copy data directly into HEAP32
-    for (let i = 0; i < arr32.length; i++) {
-        HEAP32[arrOffsetInInts + i] = arr32[i];
-    }
-    for (let i = 0; i < seq32.length; i++) {
-        HEAP32[seqOffsetInInts + i] = seq32[i];
-    }
+    copyToHeap(HEAP32, arr32, arrOffsetInInts);
+    copyToHeap(HEAP32, seq32, seqOffsetInInts);
     // Convert offsets from int32 indices to byte offsets
     const arrPtr = arrOffsetInInts * 4;
     const seqPtr = seqOffsetInInts * 4;
     // Call the WASM function with byte pointers
     return moduleInstance._wasm_number_of_sequences(arrPtr, arr32.length, seqPtr, seq32.length);
+}
+/**
+ * Helper: Build a multi-dimensional array from flat output.
+ * Dimensions correspond to (seq[i] + 1) for each sequence value.
+ * Data is in lexicographic order as produced by C++.
+ */
+function buildMultiDimensionalArray(flatData, dimensions) {
+    if (dimensions.length === 0) {
+        return flatData[0];
+    }
+    if (dimensions.length === 1) {
+        return Array.from(flatData);
+    }
+    // Recursively build nested arrays
+    const currentDim = dimensions[0];
+    const remainingDims = dimensions.slice(1);
+    const subArraySize = remainingDims.reduce((a, b) => a * (b + 1), 1);
+    const result = [];
+    for (let i = 0; i <= currentDim; i++) {
+        const subData = flatData.slice(i * subArraySize, (i + 1) * subArraySize);
+        result.push(buildMultiDimensionalArray(subData, remainingDims));
+    }
+    return result;
+}
+/**
+ * High-level wrapper for getting all number of sequences results.
+ * Returns a multi-dimensional array with dimensions = (seq[i] + 1) for each i.
+ * The dimensions match the length of the seq parameter.
+ * Data is filled in lexicographic order (rightmost dimension changes fastest).
+ * Allocates space in WASM memory, copies data, calls the low-level function.
+ */
+export function wasmNumberOfSequencesAll(arr, seq) {
+    const HEAP32 = getHeap32();
+    const arr32 = toInt32Array(arr);
+    const seq32 = toInt32Array(seq);
+    if (arr32.length === 0 || seq32.length === 0) {
+        return [];
+    }
+    // Calculate output array size: product of (seq[i] + 1)
+    let totalSize = 1;
+    for (let i = 0; i < seq32.length; i++) {
+        totalSize *= (seq32[i] + 1);
+    }
+    const { arrOffsetInInts, seqOffsetInInts } = allocateMemory(HEAP32, arr32, seq32, totalSize);
+    // Copy input data into HEAP32
+    copyToHeap(HEAP32, arr32, arrOffsetInInts);
+    copyToHeap(HEAP32, seq32, seqOffsetInInts);
+    // Convert offsets from int32 indices to byte offsets
+    const arrPtr = arrOffsetInInts * 4;
+    const seqPtr = seqOffsetInInts * 4;
+    // Call the WASM function, which returns a pointer to the output array
+    const outputPtr = moduleInstance._wasm_number_of_sequences_all(arrPtr, arr32.length, seqPtr, seq32.length);
+    // Convert byte pointer back to int32 index
+    const outputOffsetFromWasm = outputPtr / 4;
+    // Copy flat data from WASM memory
+    const flatData = new Int32Array(totalSize);
+    for (let i = 0; i < totalSize; i++) {
+        flatData[i] = HEAP32[outputOffsetFromWasm + i];
+    }
+    // Build multi-dimensional array with dimensions matching seq values
+    const dimensions = new Int32Array(seq32);
+    return buildMultiDimensionalArray(flatData, dimensions);
 }

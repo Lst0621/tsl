@@ -21,5 +21,5 @@ target_link_options(wasm_sample PRIVATE
 )
 
 target_link_options(wasm_sample PRIVATE
-    -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences
+    -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all
 )
