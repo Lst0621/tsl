@@ -220,3 +220,84 @@ export function wasm_matrix_det(data: readonly number[] | Int32Array, n: number)
     // Call the WASM function
     return moduleInstance!._wasm_matrix_det(dataPtr, n);
 }
+
+// --- Game of Life (C++ WASM) ---
+const GOL_DEFAULT_SIZE = 40;
+let golHandle: number | null = null;
+let golSize: number = GOL_DEFAULT_SIZE;
+
+export type GolTopologyMode = 0 | 1 | 2; // Finite2D, Torus2D, Cylinder2D
+
+export function golCreate(size: number): void {
+    if (!moduleInstance) throw new Error("WASM module not initialized.");
+    if (golHandle !== null) {
+        moduleInstance._gol_destroy(golHandle);
+    }
+    golHandle = moduleInstance._gol_create(size);
+    golSize = size;
+}
+
+export function golDestroy(): void {
+    if (moduleInstance && golHandle !== null) {
+        moduleInstance._gol_destroy(golHandle);
+        golHandle = null;
+    }
+}
+
+export function golInit(): void {
+    if (!moduleInstance || golHandle === null) throw new Error("GoL not created. Call golCreate first.");
+    moduleInstance._gol_init(golHandle);
+}
+
+export function golRandomInit(liveProb: number): void {
+    if (!moduleInstance || golHandle === null) throw new Error("GoL not created. Call golCreate first.");
+    moduleInstance._gol_random_init(golHandle, liveProb);
+}
+
+export function golRandomInitWithSeed(liveProb: number, seed: number): void {
+    if (!moduleInstance || golHandle === null) throw new Error("GoL not created. Call golCreate first.");
+    moduleInstance._gol_random_init_seed(golHandle, liveProb, seed);
+}
+
+export function golGetSeed(): number {
+    if (!moduleInstance || golHandle === null) return 0;
+    return moduleInstance._gol_get_seed(golHandle);
+}
+
+export function golEvolve(): void {
+    if (!moduleInstance || golHandle === null) throw new Error("GoL not created. Call golCreate first.");
+    moduleInstance._gol_evolve(golHandle);
+}
+
+export function golSetTopology(mode: GolTopologyMode): void {
+    if (!moduleInstance || golHandle === null) throw new Error("GoL not created. Call golCreate first.");
+    moduleInstance._gol_set_topology(golHandle, mode);
+}
+
+export function golGetLiveCells(): { x: number; y: number }[] {
+    if (!moduleInstance || golHandle === null) throw new Error("GoL not created. Call golCreate first.");
+    const HEAP32 = getHeap32();
+    const maxCount = golSize * golSize;
+    const bytes = 2 * maxCount * 4;
+    const ptr = moduleInstance._malloc(bytes);
+    if (ptr === 0) throw new Error("WASM malloc failed for GoL live cells.");
+    try {
+        const count = moduleInstance._gol_get_live_cells(golHandle, ptr, maxCount);
+        const out: { x: number; y: number }[] = [];
+        const base = ptr / 4;
+        for (let i = 0; i < count; i++) {
+            out.push({ x: HEAP32[base + 2 * i], y: HEAP32[base + 2 * i + 1] });
+        }
+        return out;
+    } finally {
+        moduleInstance._free(ptr);
+    }
+}
+
+export function golGetSize(): number {
+    return golSize;
+}
+
+export function golIsCreated(): boolean {
+    return golHandle !== null;
+}
