@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -42,7 +43,7 @@ struct ZeroValue<T, true> {
 template <typename T>
 struct ZeroValue<T, false> {
     static T create(const T& sample) {
-        return sample - sample;
+        return T(0);
     }
 };
 
@@ -57,8 +58,46 @@ class Matrix {
     std::vector<std::vector<T>> data;
     size_t rows;
     size_t cols;
+    std::optional<T> unknown_diag_scalar;
+
+   private:
+    bool is_unknown_scalar() const {
+        return unknown_diag_scalar.has_value();
+    }
+
+    const T& unknown_scalar_value() const {
+        if (!unknown_diag_scalar.has_value()) {
+            throw std::logic_error(
+                "Unknown-size scalar diagonal is not initialized");
+        }
+        return *unknown_diag_scalar;
+    }
+
+    Matrix<T> materialize_as_diag(size_t n) const {
+        if (!is_unknown_scalar()) {
+            return *this;
+        }
+        if (n == 0) {
+            throw std::invalid_argument(
+                "Cannot materialize unknown matrix with size 0");
+        }
+        Matrix<T> result(n, n);
+        for (size_t i = 0; i < n; i++) {
+            result(i, i) = unknown_scalar_value();
+        }
+        return result;
+    }
 
    public:
+    // Unknown-size diagonal scalar sentinel, default scalar is 0.
+    Matrix() : rows(0), cols(0), unknown_diag_scalar(T()) {
+    }
+
+    // Unknown-size diagonal scalar sentinel with arbitrary scalar on diagonal.
+    explicit Matrix(const T& scalar)
+        : rows(0), cols(0), unknown_diag_scalar(scalar) {
+    }
+
     /**
      * Constructor: creates an m x n matrix with smart zero initialization
      * @param m Number of rows
@@ -66,7 +105,8 @@ class Matrix {
      * Uses compile-time check: if T has default constructor, uses T();
      * otherwise uses element - element
      */
-    explicit Matrix(size_t m, size_t n) : rows(m), cols(n) {
+    explicit Matrix(size_t m, size_t n)
+        : rows(m), cols(n), unknown_diag_scalar(std::nullopt) {
         if (m == 0 || n == 0) {
             throw std::invalid_argument("Matrix dimensions must be positive");
         }
@@ -91,7 +131,7 @@ class Matrix {
      * @param default_value Default value for all elements
      */
     explicit Matrix(size_t m, size_t n, const T& default_value)
-        : rows(m), cols(n) {
+        : rows(m), cols(n), unknown_diag_scalar(std::nullopt) {
         if (m == 0 || n == 0) {
             throw std::invalid_argument("Matrix dimensions must be positive");
         }
@@ -102,7 +142,8 @@ class Matrix {
      * Constructor from 2D vector of the same type (simplified version)
      * @param source Source matrix data of type T
      */
-    Matrix(const std::vector<std::vector<T>>& source) {
+    Matrix(const std::vector<std::vector<T>>& source)
+        : rows(0), cols(0), unknown_diag_scalar(std::nullopt) {
         if (source.empty()) {
             throw std::invalid_argument("Matrix cannot be empty");
         }
@@ -137,9 +178,8 @@ class Matrix {
     template <typename U>
     Matrix(
         const std::vector<std::vector<U>>& source,
-        std::function<T(const U&)> transform = [](const U& u) {
-            return T(u);
-        }) {
+        std::function<T(const U&)> transform = [](const U& u) { return T(u); })
+        : rows(0), cols(0), unknown_diag_scalar(std::nullopt) {
         if (source.empty()) {
             throw std::invalid_argument("Matrix cannot be empty");
         }
@@ -168,6 +208,10 @@ class Matrix {
      * Get number of rows
      */
     size_t get_rows() const {
+        if (is_unknown_scalar()) {
+            throw std::invalid_argument(
+                "Unknown-size diagonal scalar matrix has unresolved rows");
+        }
         return rows;
     }
 
@@ -175,6 +219,10 @@ class Matrix {
      * Get number of columns
      */
     size_t get_cols() const {
+        if (is_unknown_scalar()) {
+            throw std::invalid_argument(
+                "Unknown-size diagonal scalar matrix has unresolved cols");
+        }
         return cols;
     }
 
@@ -182,6 +230,10 @@ class Matrix {
      * Access element at (i, j) - const version
      */
     const T& at(size_t i, size_t j) const {
+        if (is_unknown_scalar()) {
+            throw std::invalid_argument(
+                "Cannot index unknown-size diagonal scalar matrix");
+        }
         if (i >= rows || j >= cols) {
             throw std::out_of_range("Matrix index out of bounds");
         }
@@ -192,6 +244,10 @@ class Matrix {
      * Access element at (i, j) - non-const version
      */
     T& at(size_t i, size_t j) {
+        if (is_unknown_scalar()) {
+            throw std::invalid_argument(
+                "Cannot index unknown-size diagonal scalar matrix");
+        }
         if (i >= rows || j >= cols) {
             throw std::out_of_range("Matrix index out of bounds");
         }
@@ -217,6 +273,10 @@ class Matrix {
      * Get underlying data as vector<vector<T>>
      */
     const std::vector<std::vector<T>>& get_data() const {
+        if (is_unknown_scalar()) {
+            throw std::invalid_argument(
+                "Unknown-size diagonal scalar matrix has no concrete data");
+        }
         return data;
     }
 
@@ -224,6 +284,11 @@ class Matrix {
      * Get mutable reference to underlying data
      */
     std::vector<std::vector<T>>& get_data_mut() {
+        if (is_unknown_scalar()) {
+            throw std::invalid_argument(
+                "Unknown-size diagonal scalar matrix has no mutable concrete "
+                "data");
+        }
         return data;
     }
 
@@ -231,6 +296,9 @@ class Matrix {
      * Check if matrix is square
      */
     bool is_square() const {
+        if (is_unknown_scalar()) {
+            return true;
+        }
         return rows == cols;
     }
 
@@ -238,6 +306,9 @@ class Matrix {
      * Transpose the matrix (returns new matrix)
      */
     Matrix<T> transpose() const {
+        if (is_unknown_scalar()) {
+            return *this;
+        }
         Matrix<T> result(cols, rows);
         for (size_t i = 0; i < rows; i++) {
             for (size_t j = 0; j < cols; j++) {
@@ -251,6 +322,10 @@ class Matrix {
      * String representation
      */
     std::string to_string() const {
+        if (is_unknown_scalar()) {
+            return "Matrix(?x?, diag=" +
+                   std::to_string(unknown_scalar_value()) + ")";
+        }
         std::string result = "Matrix(" + std::to_string(rows) + "x" +
                              std::to_string(cols) + ")[\n";
         for (size_t i = 0; i < rows; i++) {
@@ -272,6 +347,26 @@ class Matrix {
      * Requires: both matrices have same dimensions
      */
     Matrix<T> operator+(const Matrix<T>& other) const {
+        if (is_unknown_scalar() && other.is_unknown_scalar()) {
+            return Matrix<T>(unknown_scalar_value() +
+                             other.unknown_scalar_value());
+        }
+        if (is_unknown_scalar()) {
+            if (!other.is_square()) {
+                throw std::invalid_argument(
+                    "Cannot add unknown-size diagonal scalar matrix to "
+                    "non-square matrix");
+            }
+            return this->materialize_as_diag(other.rows) + other;
+        }
+        if (other.is_unknown_scalar()) {
+            if (!this->is_square()) {
+                throw std::invalid_argument(
+                    "Cannot add non-square matrix to unknown-size diagonal "
+                    "scalar matrix");
+            }
+            return (*this) + other.materialize_as_diag(this->rows);
+        }
         if (rows != other.rows || cols != other.cols) {
             throw std::invalid_argument(
                 "Cannot add matrices with different dimensions");
@@ -290,6 +385,26 @@ class Matrix {
      * Requires: both matrices have same dimensions
      */
     Matrix<T> operator-(const Matrix<T>& other) const {
+        if (is_unknown_scalar() && other.is_unknown_scalar()) {
+            return Matrix<T>(unknown_scalar_value() -
+                             other.unknown_scalar_value());
+        }
+        if (is_unknown_scalar()) {
+            if (!other.is_square()) {
+                throw std::invalid_argument(
+                    "Cannot subtract non-square matrix from unknown-size "
+                    "diagonal scalar matrix");
+            }
+            return this->materialize_as_diag(other.rows) - other;
+        }
+        if (other.is_unknown_scalar()) {
+            if (!this->is_square()) {
+                throw std::invalid_argument(
+                    "Cannot subtract unknown-size diagonal scalar matrix from "
+                    "non-square matrix");
+            }
+            return (*this) - other.materialize_as_diag(this->rows);
+        }
         if (rows != other.rows || cols != other.cols) {
             throw std::invalid_argument(
                 "Cannot subtract matrices with different dimensions");
@@ -309,6 +424,16 @@ class Matrix {
      * Returns: (rows x other.cols) matrix
      */
     Matrix<T> operator*(const Matrix<T>& other) const {
+        if (is_unknown_scalar() && other.is_unknown_scalar()) {
+            return Matrix<T>(unknown_scalar_value() *
+                             other.unknown_scalar_value());
+        }
+        if (is_unknown_scalar()) {
+            return this->materialize_as_diag(other.rows) * other;
+        }
+        if (other.is_unknown_scalar()) {
+            return (*this) * other.materialize_as_diag(this->cols);
+        }
         if (cols != other.rows) {
             throw std::invalid_argument(
                 "Cannot multiply matrices: cols of A must equal rows of B");
@@ -331,16 +456,10 @@ class Matrix {
 
     /**
      * Scalar multiplication: A * scalar
-     * Multiplies every element by the scalar
+     * Delegates to scalar * A so scalar-left path is the single implementation.
      */
     Matrix<T> operator*(const T& scalar) const {
-        Matrix<T> result(rows, cols);
-        for (size_t i = 0; i < rows; i++) {
-            for (size_t j = 0; j < cols; j++) {
-                result(i, j) = data[i][j] * scalar;
-            }
-        }
-        return result;
+        return scalar * (*this);
     }
 
     /**
@@ -348,7 +467,16 @@ class Matrix {
      * Friend function to allow scalar * matrix
      */
     friend Matrix<T> operator*(const T& scalar, const Matrix<T>& matrix) {
-        return matrix * scalar;
+        if (matrix.is_unknown_scalar()) {
+            return Matrix<T>(scalar * matrix.unknown_scalar_value());
+        }
+        Matrix<T> result(matrix.rows, matrix.cols);
+        for (size_t i = 0; i < matrix.rows; i++) {
+            for (size_t j = 0; j < matrix.cols; j++) {
+                result(i, j) = scalar * matrix.data[i][j];
+            }
+        }
+        return result;
     }
 
     /**
@@ -356,6 +484,9 @@ class Matrix {
      * Divides every element by the scalar
      */
     Matrix<T> operator/(const T& scalar) const {
+        if (is_unknown_scalar()) {
+            return Matrix<T>(unknown_scalar_value() / scalar);
+        }
         Matrix<T> result(rows, cols);
         for (size_t i = 0; i < rows; i++) {
             for (size_t j = 0; j < cols; j++) {
@@ -363,6 +494,38 @@ class Matrix {
             }
         }
         return result;
+    }
+
+    /**
+     * Equality operator
+     * Sentinel-sentinel compares diagonal scalar value.
+     * Sentinel-concrete is always false.
+     */
+    bool operator==(const Matrix<T>& other) const {
+        if (is_unknown_scalar() && other.is_unknown_scalar()) {
+            return unknown_scalar_value() == other.unknown_scalar_value();
+        }
+        if (is_unknown_scalar() || other.is_unknown_scalar()) {
+            return false;
+        }
+        if (rows != other.rows || cols != other.cols) {
+            return false;
+        }
+        for (size_t i = 0; i < rows; i++) {
+            for (size_t j = 0; j < cols; j++) {
+                if (!(data[i][j] == other.data[i][j])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Inequality operator
+     */
+    bool operator!=(const Matrix<T>& other) const {
+        return !(*this == other);
     }
 
     /**
@@ -474,7 +637,8 @@ class Matrix {
         // Initialize det with zero value using smart helper
         // Uses element - element since ModularNumber and other custom types may
         // not have default constructor
-        T det = ZeroValue<T, false>::create(data[expand_row][0]);
+        // T det = ZeroValue<T, false>::create(data[expand_row][0]);
+        T det = T();
 
         // Mark and compute first term
         skip_rows[expand_row] = 1;

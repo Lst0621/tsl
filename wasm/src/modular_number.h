@@ -5,10 +5,15 @@
 /**
  * Modular arithmetic class for numbers mod n.
  * Supports addition, subtraction, multiplication, and division (if n is prime).
+ *
+ * Supports unknown-modulus sentinel mode: ModularNumber() creates a value with
+ * unknown modulus, which can only be used with known-modulus values.
+ * Operations adopt the known modulus when combining with known-modulus values.
  */
 class ModularNumber {
     long long value;
     long long modulus;
+    bool is_unknown_mod;
 
     /**
      * Fast modular exponentiation: base^exp mod mod
@@ -21,6 +26,12 @@ class ModularNumber {
     static bool is_prime(long long n);
 
    public:
+    /**
+     * Default constructor: creates ModularNumber with unknown modulus
+     * value defaults to 0, modulus is marked as unknown
+     */
+    ModularNumber();
+
     /**
      * Constructor: creates a ModularNumber with given value and modulus
      * Normalizes value to be in range [0, modulus)
@@ -36,6 +47,11 @@ class ModularNumber {
      * Get the modulus
      */
     long long get_modulus() const;
+
+    /**
+     * Check if modulus is unknown
+     */
+    bool is_unknown_modulus() const;
 
     /**
      * Addition in modular arithmetic: (a + b) mod n

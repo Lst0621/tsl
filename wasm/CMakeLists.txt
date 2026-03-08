@@ -9,6 +9,7 @@ set(TSL_CORE_SOURCES
         src/game_of_life.cpp
         src/modular_number.cpp
         src/general_linear_group.cpp
+        src/linear_recurrence.cpp
 )
 
 set(TSL_CORE_HEADERS
@@ -22,6 +23,7 @@ set(TSL_CORE_HEADERS
         src/coordinate.h
         src/topology.h
         src/polynomial.h
+        src/linear_recurrence.h
 )
 
 add_library(tsl_core STATIC
@@ -79,6 +81,7 @@ if(NOT CMAKE_C_COMPILER MATCHES "emcc")
     # Create polynomial test executable (native, not WASM).
     add_executable(polynomial_test_gtest
             gtest/polynomial_test_gtest.cpp
+            gtest/linear_recurrence_test_gtest.cpp
     )
 
     target_link_libraries(polynomial_test_gtest

@@ -68,8 +68,7 @@ T power(const T& base, unsigned long long exp, const T& identity) {
  */
 template <typename T>
 std::vector<T> generate_semigroup(const std::vector<T>& generators,
-                                  const int limit = -1,
-                                  const bool is_abelian = false) {
+                                  const int limit, const bool is_abelian) {
     std::vector<T> ret(generators.begin(), generators.end());
     size_t last_length = 0;
     size_t current_length = ret.size();

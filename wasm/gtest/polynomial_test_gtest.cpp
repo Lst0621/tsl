@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "comb.h"
+#include "linear_recurrence.h"
 #include "polynomial.h"
 
 // Specialized traits for double with floating-point tolerance
@@ -536,10 +537,9 @@ TEST(BinomialExpansionTest, PolynomialVsBinomialCoefficients) {
     }
 }
 
-// Main function for running tests
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+// ============================================================================
+// Linear Recurrence Tests
+// ============================================================================
 
+// Moved to gtest/linear_recurrence_test_gtest.cpp.
 

@@ -33,11 +33,18 @@ bool ModularNumber::is_prime(long long n) {
 }
 
 /**
+ * Default constructor: creates ModularNumber with unknown modulus
+ * value defaults to 0, modulus is marked as unknown
+ */
+ModularNumber::ModularNumber() : value(0), modulus(0), is_unknown_mod(true) {
+}
+
+/**
  * Constructor: creates a ModularNumber with given value and modulus
  * Normalizes value to be in range [0, modulus)
  */
 ModularNumber::ModularNumber(long long value, long long modulus)
-    : modulus(modulus) {
+    : modulus(modulus), is_unknown_mod(false) {
     if (modulus <= 0) {
         throw std::invalid_argument("Modulus must be positive");
     }
@@ -59,9 +66,26 @@ long long ModularNumber::get_modulus() const {
 }
 
 /**
+ * Check if modulus is unknown
+ */
+bool ModularNumber::is_unknown_modulus() const {
+    return is_unknown_mod;
+}
+
+/**
  * Addition in modular arithmetic: (a + b) mod n
  */
 ModularNumber ModularNumber::add(const ModularNumber& other) const {
+    if (is_unknown_mod && other.is_unknown_mod) {
+        throw std::invalid_argument(
+            "Cannot add two numbers with unknown modulus");
+    }
+    if (is_unknown_mod) {
+        return ModularNumber(value + other.value, other.modulus);
+    }
+    if (other.is_unknown_mod) {
+        return ModularNumber(value + other.value, modulus);
+    }
     if (modulus != other.modulus) {
         throw std::invalid_argument("Cannot add numbers with different moduli");
     }
@@ -72,6 +96,16 @@ ModularNumber ModularNumber::add(const ModularNumber& other) const {
  * Subtraction in modular arithmetic: (a - b) mod n
  */
 ModularNumber ModularNumber::subtract(const ModularNumber& other) const {
+    if (is_unknown_mod && other.is_unknown_mod) {
+        throw std::invalid_argument(
+            "Cannot subtract two numbers with unknown modulus");
+    }
+    if (is_unknown_mod) {
+        return ModularNumber(value - other.value, other.modulus);
+    }
+    if (other.is_unknown_mod) {
+        return ModularNumber(value - other.value, modulus);
+    }
     if (modulus != other.modulus) {
         throw std::invalid_argument(
             "Cannot subtract numbers with different moduli");
@@ -83,6 +117,16 @@ ModularNumber ModularNumber::subtract(const ModularNumber& other) const {
  * Multiplication in modular arithmetic: (a * b) mod n
  */
 ModularNumber ModularNumber::multiply(const ModularNumber& other) const {
+    if (is_unknown_mod && other.is_unknown_mod) {
+        throw std::invalid_argument(
+            "Cannot multiply two numbers with unknown modulus");
+    }
+    if (is_unknown_mod) {
+        return ModularNumber(value * other.value, other.modulus);
+    }
+    if (other.is_unknown_mod) {
+        return ModularNumber(value * other.value, modulus);
+    }
     if (modulus != other.modulus) {
         throw std::invalid_argument(
             "Cannot multiply numbers with different moduli");
@@ -95,25 +139,42 @@ ModularNumber ModularNumber::multiply(const ModularNumber& other) const {
  * Only works if n is prime (uses Fermat's little theorem)
  */
 ModularNumber ModularNumber::divide(const ModularNumber& other) const {
-    if (modulus != other.modulus) {
+    if (is_unknown_mod && other.is_unknown_mod) {
         throw std::invalid_argument(
-            "Cannot divide numbers with different moduli");
+            "Cannot divide two numbers with unknown modulus");
     }
-    if (!is_prime(modulus)) {
+
+    long long target_mod = is_unknown_mod ? other.modulus : modulus;
+    long long this_value = value;
+    long long other_value = other.value;
+
+    if (other.is_unknown_mod) {
+        other_value = other.value;
+    }
+
+    if (!is_prime(target_mod)) {
         throw std::invalid_argument("Division only works if modulus is prime");
     }
-    if (other.value == 0) {
+    if (other_value == 0) {
         throw std::invalid_argument("Cannot divide by zero");
     }
     // For prime modulus, a^(-1) ≡ a^(p-2) (mod p) by Fermat's little theorem
-    long long inverse = modular_pow(other.value, modulus - 2, modulus);
-    return ModularNumber(value * inverse, modulus);
+    long long inverse = modular_pow(other_value, target_mod - 2, target_mod);
+    return ModularNumber(this_value * inverse, target_mod);
 }
 
 /**
  * Equality operator
+ * Unknown modulus equals unknown modulus only if values match.
+ * Unknown modulus vs known modulus is always false.
  */
 bool ModularNumber::operator==(const ModularNumber& other) const {
+    if (is_unknown_mod && other.is_unknown_mod) {
+        return value == other.value;
+    }
+    if (is_unknown_mod || other.is_unknown_mod) {
+        return false;
+    }
     return value == other.value && modulus == other.modulus;
 }
 
@@ -156,5 +217,8 @@ ModularNumber ModularNumber::operator/(const ModularNumber& other) const {
  * String representation
  */
 std::string ModularNumber::to_string() const {
+    if (is_unknown_mod) {
+        return std::to_string(value) + " (mod ?)";
+    }
     return std::to_string(value) + " (mod " + std::to_string(modulus) + ")";
 }
