@@ -1,0 +1,7 @@
+# clangd config for WASM C++ sources (concepts, go-to-def, etc.)
+# CompilationDatabase: dir containing compile_commands.json (after ./build.sh)
+# Compiler: use clang++ for parsing so C++20/concepts work (compile_commands uses em++)
+CompileFlags:
+  CompilationDatabase: wasm_out_v1
+  Compiler: clang++
+  Add: [-std=c++20]
