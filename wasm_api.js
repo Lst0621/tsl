@@ -250,3 +250,147 @@ export function golGetSize() {
 export function golIsCreated() {
     return golHandle !== null;
 }
+// --- Linear recurrence (opaque handle) ---
+const LR_DEFAULT_THRESHOLD = 20;
+let lrHandle = null;
+export function lrCreate(coeffs, recursiveThreshold = LR_DEFAULT_THRESHOLD) {
+    if (!moduleInstance)
+        throw new Error("WASM module not initialized.");
+    if (lrHandle !== null) {
+        moduleInstance._lr_destroy(lrHandle);
+    }
+    const HEAP32 = getHeap32();
+    const arr32 = toInt32Array(coeffs);
+    const base = 2048;
+    if (HEAP32.length < base + arr32.length)
+        throw new Error("WASM memory exhausted");
+    copyToHeap(HEAP32, arr32, base);
+    lrHandle = moduleInstance._lr_create(base * 4, arr32.length, recursiveThreshold);
+}
+export function lrDestroy() {
+    if (moduleInstance && lrHandle !== null) {
+        moduleInstance._lr_destroy(lrHandle);
+        lrHandle = null;
+    }
+}
+export function lrOrder() {
+    if (!moduleInstance || lrHandle === null)
+        throw new Error("Linear recurrence not created. Call lrCreate first.");
+    return moduleInstance._lr_order(lrHandle);
+}
+/** Returns a(n) as number (full int64 range via low + high*2^32; fits in number for |value| < 2^53). */
+export function lrEvaluate(initialValues, n) {
+    if (!moduleInstance || lrHandle === null)
+        throw new Error("Linear recurrence not created. Call lrCreate first.");
+    const HEAP32 = getHeap32();
+    const init32 = toInt32Array(initialValues);
+    const initBase = 2048;
+    const resultBase = 4096;
+    if (HEAP32.length < resultBase + 2)
+        throw new Error("WASM memory exhausted");
+    copyToHeap(HEAP32, init32, initBase);
+    moduleInstance._lr_evaluate(lrHandle, initBase * 4, init32.length, n, resultBase * 4);
+    const low = HEAP32[resultBase];
+    const high = HEAP32[resultBase + 1];
+    return low + high * 0x100000000;
+}
+export function lrGetCharacteristicPolynomial() {
+    if (!moduleInstance || lrHandle === null)
+        throw new Error("Linear recurrence not created. Call lrCreate first.");
+    const order = moduleInstance._lr_order(lrHandle);
+    const maxLen = order + 1;
+    const HEAP32 = getHeap32();
+    const base = 2048;
+    if (HEAP32.length < base + maxLen)
+        throw new Error("WASM memory exhausted");
+    const len = moduleInstance._lr_characteristic_polynomial(lrHandle, base * 4, maxLen);
+    const out = [];
+    for (let i = 0; i < len; i++)
+        out.push(HEAP32[base + i]);
+    return out;
+}
+export function lrGetTransitionMatrixSize() {
+    if (!moduleInstance || lrHandle === null)
+        throw new Error("Linear recurrence not created. Call lrCreate first.");
+    return moduleInstance._lr_transition_matrix_size(lrHandle);
+}
+export function lrGetTransitionMatrixData() {
+    if (!moduleInstance || lrHandle === null)
+        throw new Error("Linear recurrence not created. Call lrCreate first.");
+    const n = moduleInstance._lr_transition_matrix_size(lrHandle);
+    const size = n * n;
+    const HEAP32 = getHeap32();
+    const base = 2048;
+    if (HEAP32.length < base + size)
+        throw new Error("WASM memory exhausted");
+    moduleInstance._lr_transition_matrix_data(lrHandle, base * 4, size);
+    const out = [];
+    for (let i = 0; i < size; i++)
+        out.push(HEAP32[base + i]);
+    return out;
+}
+export function lrEvaluatePolyAtMatrix() {
+    if (!moduleInstance || lrHandle === null)
+        throw new Error("Linear recurrence not created. Call lrCreate first.");
+    const n = moduleInstance._lr_transition_matrix_size(lrHandle);
+    const size = n * n;
+    const HEAP32 = getHeap32();
+    const base = 2048;
+    if (HEAP32.length < base + size)
+        throw new Error("WASM memory exhausted");
+    moduleInstance._lr_evaluate_poly_at_matrix(lrHandle, base * 4, size);
+    const out = [];
+    for (let i = 0; i < size; i++)
+        out.push(HEAP32[base + i]);
+    return out;
+}
+export function wasmMatrixPower(data, n, exponent) {
+    const HEAP32 = getHeap32();
+    const size = n * n;
+    if (data.length !== size)
+        throw new Error(`Expected ${size} elements for ${n}×${n} matrix.`);
+    const inBase = 2048;
+    const outBase = 2048 + size;
+    if (HEAP32.length < outBase + size)
+        throw new Error("WASM memory exhausted");
+    copyToHeap(HEAP32, toInt32Array(data), inBase);
+    moduleInstance._wasm_matrix_power(inBase * 4, n, exponent, outBase * 4);
+    const out = [];
+    for (let i = 0; i < size; i++)
+        out.push(HEAP32[outBase + i]);
+    return out;
+}
+export function wasmMatrixTimesConst(data, n, scalar) {
+    const HEAP32 = getHeap32();
+    const size = n * n;
+    if (data.length !== size)
+        throw new Error(`Expected ${size} elements for ${n}×${n} matrix.`);
+    const inBase = 2048;
+    const outBase = 2048 + size;
+    if (HEAP32.length < outBase + size)
+        throw new Error("WASM memory exhausted");
+    copyToHeap(HEAP32, toInt32Array(data), inBase);
+    moduleInstance._wasm_matrix_times_const(inBase * 4, n, scalar, outBase * 4);
+    const out = [];
+    for (let i = 0; i < size; i++)
+        out.push(HEAP32[outBase + i]);
+    return out;
+}
+export function wasmMatrixAdd(dataA, dataB, n) {
+    const HEAP32 = getHeap32();
+    const size = n * n;
+    if (dataA.length !== size || dataB.length !== size)
+        throw new Error(`Expected ${size} elements for ${n}×${n} matrix.`);
+    const baseA = 2048;
+    const baseB = 2048 + size;
+    const baseOut = 2048 + size * 2;
+    if (HEAP32.length < baseOut + size)
+        throw new Error("WASM memory exhausted");
+    copyToHeap(HEAP32, toInt32Array(dataA), baseA);
+    copyToHeap(HEAP32, toInt32Array(dataB), baseB);
+    moduleInstance._wasm_matrix_add(baseA * 4, baseB * 4, n, baseOut * 4);
+    const out = [];
+    for (let i = 0; i < size; i++)
+        out.push(HEAP32[baseOut + i]);
+    return out;
+}

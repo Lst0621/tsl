@@ -57,7 +57,7 @@ if(CMAKE_C_COMPILER MATCHES "emcc")
     )
 
     target_link_options(wasm_sample PRIVATE
-            -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_matrix_det,_gol_create,_gol_destroy,_gol_init,_gol_random_init,_gol_random_init_seed,_gol_get_seed,_gol_evolve,_gol_set_topology,_gol_get_live_cells,_malloc,_free
+            -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_matrix_det,_gol_create,_gol_destroy,_gol_init,_gol_random_init,_gol_random_init_seed,_gol_get_seed,_gol_evolve,_gol_set_topology,_gol_get_live_cells,_lr_create,_lr_destroy,_lr_order,_lr_evaluate,_lr_characteristic_polynomial,_lr_transition_matrix_size,_lr_transition_matrix_data,_lr_evaluate_poly_at_matrix,_wasm_matrix_power,_wasm_matrix_times_const,_wasm_matrix_add,_malloc,_free
     )
 endif()
 

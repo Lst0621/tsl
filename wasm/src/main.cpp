@@ -1,12 +1,17 @@
 #include <emscripten/emscripten.h>
 
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <numeric>
+#include <vector>
 
 #include "comb.h"
 #include "game_of_life.h"
 #include "general_linear_group.h"
+#include "linear_recurrence.h"
 #include "matrix.h"
+#include "semigroup.h"
 
 extern "C" {
 
@@ -130,5 +135,156 @@ int gol_get_live_cells(void* handle, int* out_xy, int max_count) {
         out_xy[2 * i + 1] = cells[i].y;
     }
     return static_cast<int>(cells.size());
+}
+
+// --- Linear recurrence (opaque handle = LinearRecurrence*) ---
+// All recurrence-related data uses long long in C++; we pass int32 ptrs and
+// convert. Output buffers are int32 (truncated from long long for v1).
+
+EMSCRIPTEN_KEEPALIVE
+void* lr_create(const int* coeffs_ptr, int coeffs_len,
+                int recursive_threshold) {
+    std::vector<long long> coeffs(coeffs_ptr, coeffs_ptr + coeffs_len);
+    return new LinearRecurrence(coeffs,
+                                static_cast<size_t>(recursive_threshold));
+}
+
+EMSCRIPTEN_KEEPALIVE
+void lr_destroy(void* handle) {
+    delete static_cast<LinearRecurrence*>(handle);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int lr_order(void* handle) {
+    return static_cast<int>(static_cast<LinearRecurrence*>(handle)->order());
+}
+
+// Writes result as int64 (low 32 bits at result_ptr, high 32 at result_ptr+4).
+EMSCRIPTEN_KEEPALIVE
+void lr_evaluate(void* handle, const int* init_ptr, int init_len, int n,
+                 int* result_ptr) {
+    std::vector<long long> init(init_ptr, init_ptr + init_len);
+    long long val = static_cast<LinearRecurrence*>(handle)->evaluate(
+        init, static_cast<size_t>(n));
+    std::uint32_t low = static_cast<std::uint32_t>(val & 0xFFFFFFFFu);
+    std::uint32_t high = static_cast<std::uint32_t>((val >> 32) & 0xFFFFFFFFu);
+    result_ptr[0] = static_cast<int>(low);
+    result_ptr[1] = static_cast<int>(high);
+}
+
+// Writes characteristic polynomial coefficients (ascending degree) as int32;
+// returns count.
+EMSCRIPTEN_KEEPALIVE
+int lr_characteristic_polynomial(void* handle, int* out_ptr, int max_len) {
+    const auto& coeffs = static_cast<LinearRecurrence*>(handle)
+                             ->characteristic_polynomial()
+                             .get_coefficients();
+    int len = static_cast<int>(coeffs.size());
+    if (len > max_len) len = max_len;
+    for (int i = 0; i < len; ++i) {
+        out_ptr[i] = static_cast<int>(coeffs[i]);
+    }
+    return len;
+}
+
+EMSCRIPTEN_KEEPALIVE
+int lr_transition_matrix_size(void* handle) {
+    return static_cast<int>(
+        static_cast<LinearRecurrence*>(handle)->transition_matrix().get_rows());
+}
+
+// Writes transition matrix row-major as int32 (truncated). out_ptr must have at
+// least order² elements.
+EMSCRIPTEN_KEEPALIVE
+void lr_transition_matrix_data(void* handle, int* out_ptr, int max_len) {
+    const Matrix<long long>& M =
+        static_cast<LinearRecurrence*>(handle)->transition_matrix();
+    size_t rows = M.get_rows();
+    size_t cols = M.get_cols();
+    size_t idx = 0;
+    for (size_t i = 0; i < rows && idx < static_cast<size_t>(max_len); ++i) {
+        for (size_t j = 0; j < cols && idx < static_cast<size_t>(max_len);
+             ++j) {
+            out_ptr[idx++] = static_cast<int>(M.at(i, j));
+        }
+    }
+}
+
+// p(M) for characteristic polynomial; writes n×n row-major as int32.
+EMSCRIPTEN_KEEPALIVE
+void lr_evaluate_poly_at_matrix(void* handle, int* out_ptr, int max_len) {
+    LinearRecurrence* lr = static_cast<LinearRecurrence*>(handle);
+    Matrix<long long> pM =
+        lr->characteristic_polynomial().apply(lr->transition_matrix());
+    size_t rows = pM.get_rows();
+    size_t cols = pM.get_cols();
+    size_t idx = 0;
+    for (size_t i = 0; i < rows && idx < static_cast<size_t>(max_len); ++i) {
+        for (size_t j = 0; j < cols && idx < static_cast<size_t>(max_len);
+             ++j) {
+            out_ptr[idx++] = static_cast<int>(pM.at(i, j));
+        }
+    }
+}
+
+// Standalone: M^exponent. data_ptr and out_ptr are n×n row-major int32; we use
+// long long internally.
+EMSCRIPTEN_KEEPALIVE
+void wasm_matrix_power(const int* data_ptr, int n, int exponent, int* out_ptr) {
+    std::vector<long long> data(n * n);
+    for (int i = 0; i < n * n; ++i)
+        data[i] = static_cast<long long>(data_ptr[i]);
+    Matrix<long long> M =
+        to_matrix<long long, std::vector<long long>>(data, n, n);
+    std::vector<std::vector<long long>> id_data(n,
+                                                std::vector<long long>(n, 0LL));
+    for (int i = 0; i < n; ++i) id_data[i][i] = 1LL;
+    Matrix<long long> identity(id_data);
+    Matrix<long long> result =
+        power(M, static_cast<unsigned long long>(exponent), identity);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            out_ptr[i * n + j] = static_cast<int>(result.at(i, j));
+        }
+    }
+}
+
+// Standalone: scalar * M. data_ptr and out_ptr are n×n row-major int32; scalar
+// is int32.
+EMSCRIPTEN_KEEPALIVE
+void wasm_matrix_times_const(const int* data_ptr, int n, int scalar,
+                             int* out_ptr) {
+    std::vector<long long> data(n * n);
+    for (int i = 0; i < n * n; ++i)
+        data[i] = static_cast<long long>(data_ptr[i]);
+    Matrix<long long> M =
+        to_matrix<long long, std::vector<long long>>(data, n, n);
+    Matrix<long long> result = static_cast<long long>(scalar) * M;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            out_ptr[i * n + j] = static_cast<int>(result.at(i, j));
+        }
+    }
+}
+
+// Standalone: A + B. data_a_ptr, data_b_ptr, out_ptr are n×n row-major int32.
+EMSCRIPTEN_KEEPALIVE
+void wasm_matrix_add(const int* data_a_ptr, const int* data_b_ptr, int n,
+                     int* out_ptr) {
+    std::vector<long long> a_data(n * n), b_data(n * n);
+    for (int i = 0; i < n * n; ++i) {
+        a_data[i] = static_cast<long long>(data_a_ptr[i]);
+        b_data[i] = static_cast<long long>(data_b_ptr[i]);
+    }
+    Matrix<long long> A =
+        to_matrix<long long, std::vector<long long>>(a_data, n, n);
+    Matrix<long long> B =
+        to_matrix<long long, std::vector<long long>>(b_data, n, n);
+    Matrix<long long> result = A + B;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            out_ptr[i * n + j] = static_cast<int>(result.at(i, j));
+        }
+    }
 }
 }
