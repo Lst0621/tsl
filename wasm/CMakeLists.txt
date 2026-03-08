@@ -2,34 +2,90 @@ cmake_minimum_required(VERSION 3.15)
 project(wasm_sample)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_EXECUTABLE_SUFFIX ".js")
 
-add_executable(wasm_sample
-        src/main.cpp
+# Shared implementation sources compiled for each active toolchain/profile.
+set(TSL_CORE_SOURCES
         src/comb.cpp
-        src/comb.h
         src/game_of_life.cpp
+        src/modular_number.cpp
+        src/general_linear_group.cpp
+)
+
+set(TSL_CORE_HEADERS
+        src/comb.h
         src/game_of_life.h
         src/helper.h
-        src/modular_number.cpp
         src/modular_number.h
         src/semigroup.h
         src/matrix.h
         src/general_linear_group.h
-        src/general_linear_group.cpp
         src/coordinate.h
         src/topology.h
+        src/polynomial.h
 )
 
-
-target_link_options(wasm_sample PRIVATE
-        -sWASM=1
-        -sMODULARIZE=1
-        -sEXPORT_ES6=1
-        -sENVIRONMENT=web
-        -O1
+add_library(tsl_core STATIC
+        ${TSL_CORE_SOURCES}
+        ${TSL_CORE_HEADERS}
 )
 
-target_link_options(wasm_sample PRIVATE
-    -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_matrix_det,_gol_create,_gol_destroy,_gol_init,_gol_random_init,_gol_random_init_seed,_gol_get_seed,_gol_evolve,_gol_set_topology,_gol_get_live_cells,_malloc,_free
+target_include_directories(tsl_core PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+# Only set WASM executable suffix when using Emscripten.
+if(CMAKE_C_COMPILER MATCHES "emcc")
+    set(CMAKE_EXECUTABLE_SUFFIX ".js")
+endif()
+
+# Main WASM executable - only build when using Emscripten.
+if(CMAKE_C_COMPILER MATCHES "emcc")
+    add_executable(wasm_sample
+            src/main.cpp
+    )
+
+    target_link_libraries(wasm_sample PRIVATE tsl_core)
+
+    target_link_options(wasm_sample PRIVATE
+            -sWASM=1
+            -sMODULARIZE=1
+            -sEXPORT_ES6=1
+            -sENVIRONMENT=web
+            -O1
+    )
+
+    target_link_options(wasm_sample PRIVATE
+            -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_matrix_det,_gol_create,_gol_destroy,_gol_init,_gol_random_init,_gol_random_init_seed,_gol_get_seed,_gol_evolve,_gol_set_topology,_gol_get_live_cells,_malloc,_free
+    )
+endif()
+
+# Google Test Configuration (for native C++ testing, not WASM).
+if(NOT CMAKE_C_COMPILER MATCHES "emcc")
+    enable_testing()
+
+    include(FetchContent)
+    FetchContent_Declare(
+            googletest
+            URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+            DOWNLOAD_EXTRACT_TIMESTAMP ON
+    )
+
+    # For Windows: Prevent overriding the parent project's compiler/linker settings.
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+
+    include(GoogleTest)
+
+    # Create polynomial test executable (native, not WASM).
+    add_executable(polynomial_test_gtest
+            gtest/polynomial_test_gtest.cpp
+    )
+
+    target_link_libraries(polynomial_test_gtest
+            tsl_core
+            GTest::gtest
+            GTest::gtest_main
+    )
+
+    gtest_discover_tests(polynomial_test_gtest)
+endif()

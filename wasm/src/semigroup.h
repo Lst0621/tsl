@@ -1,12 +1,62 @@
 #pragma once
 
 #include <algorithm>
+#include <stdexcept>
 #include <vector>
 
 /**
  * Generic semigroup generator template.
  *
  * Generates all elements of a semigroup from a set of generators.
+ * Assumes that operator== and operator* are already defined for type T.
+ *
+ * @tparam T The element type. Must support operator== and operator*.
+ * @param generators Vector of initial generator elements.
+ * @param limit Maximum number of elements to generate. -1 (default) means no
+ * limit.
+ * @param is_abelian If true, only compute i*j (skips j*i). Default is false.
+ * @return Vector containing all generated semigroup elements.
+ */
+template <typename T>
+std::vector<T> generate_semigroup(const std::vector<T>& generators,
+                                  const int limit = -1,
+                                  const bool is_abelian = false);
+
+/**
+ * Generic power function using binary exponentiation.
+ * Implements fast exponentiation: a^(2n) = a^n * a^n
+ * Useful for semigroups where multiplication is the operation.
+ *
+ * @tparam T The element type. Must support operator*.
+ * @param base The element to raise to a power
+ * @param exp The exponent (must be non-negative)
+ * @param identity The identity element for multiplication (e.g., 1 for numbers)
+ * @return base raised to power exp
+ * @throws std::invalid_argument if exp is negative
+ */
+template <typename T>
+T power(const T& base, unsigned long long exp, const T& identity) {
+    if (exp == 0) {
+        return identity;
+    }
+
+    T result = identity;
+    T current = base;
+
+    // Binary exponentiation
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            result = result * current;
+        }
+        current = current * current;
+        exp /= 2;
+    }
+
+    return result;
+}
+
+/**
+ * Generate all elements of a semigroup from a set of generators.
  * Assumes that operator== and operator* are already defined for type T.
  *
  * @tparam T The element type. Must support operator== and operator*.

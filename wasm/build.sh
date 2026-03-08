@@ -11,6 +11,6 @@ cmake -DCMAKE_BUILD_TYPE=Release \
   -S . \
   -B wasm_out_v1
 
-# Build using Emscripten make wrapper
+# Build using Emscripten make wrapper with parallel jobs
 cd wasm_out_v1 || exit 1
-emmake make
+emmake make -j
