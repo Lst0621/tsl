@@ -208,7 +208,8 @@ export function golRandomInitWithSeed(liveProb, seed) {
     moduleInstance._gol_random_init_seed(golHandle, liveProb, seed);
 }
 export function golGetSeed() {
-    if (!moduleInstance || golHandle === null) return 0;
+    if (!moduleInstance || golHandle === null)
+        return 0;
     return moduleInstance._gol_get_seed(golHandle);
 }
 export function golEvolve() {
