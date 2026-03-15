@@ -250,6 +250,80 @@ export function golGetSize() {
 export function golIsCreated() {
     return golHandle !== null;
 }
+// --- Bars game (opaque handle) ---
+const BARS_GAME_BASE_INTS = 1280;
+let barsGameHandle = null;
+const m = () => moduleInstance;
+export function barsGameCreate() {
+    if (!moduleInstance)
+        throw new Error("WASM module not initialized.");
+    if (barsGameHandle !== null) {
+        m()._bars_game_destroy(barsGameHandle);
+    }
+    barsGameHandle = m()._bars_game_create();
+}
+export function barsGameDestroy() {
+    if (moduleInstance && barsGameHandle !== null) {
+        m()._bars_game_destroy(barsGameHandle);
+        barsGameHandle = null;
+    }
+}
+export function barsGameSetSeed(seed) {
+    if (!moduleInstance || barsGameHandle === null)
+        throw new Error("Bars game not created. Call barsGameCreate first.");
+    m()._bars_game_set_seed(barsGameHandle, seed);
+}
+export function barsGameInit() {
+    if (!moduleInstance || barsGameHandle === null)
+        throw new Error("Bars game not created. Call barsGameCreate first.");
+    m()._bars_game_init(barsGameHandle);
+}
+export function barsGameGetState() {
+    if (!moduleInstance || barsGameHandle === null)
+        throw new Error("Bars game not created. Call barsGameCreate first.");
+    const HEAP32 = getHeap32();
+    const size = m()._bars_game_state_size(barsGameHandle);
+    if (HEAP32.length < BARS_GAME_BASE_INTS + size)
+        throw new Error("WASM memory exhausted");
+    m()._bars_game_get_state(barsGameHandle, BARS_GAME_BASE_INTS * 4);
+    const out = [];
+    for (let i = 0; i < size; i++)
+        out.push(HEAP32[BARS_GAME_BASE_INTS + i]);
+    return out;
+}
+export function barsGameGetFutureState(choiceIndex) {
+    if (!moduleInstance || barsGameHandle === null)
+        throw new Error("Bars game not created. Call barsGameCreate first.");
+    const HEAP32 = getHeap32();
+    const size = m()._bars_game_state_size(barsGameHandle);
+    if (HEAP32.length < BARS_GAME_BASE_INTS + size)
+        throw new Error("WASM memory exhausted");
+    m()._bars_game_get_future_state(barsGameHandle, choiceIndex, BARS_GAME_BASE_INTS * 4);
+    const out = [];
+    for (let i = 0; i < size; i++)
+        out.push(HEAP32[BARS_GAME_BASE_INTS + i]);
+    return out;
+}
+export function barsGameApplyChoice(index) {
+    if (!moduleInstance || barsGameHandle === null)
+        throw new Error("Bars game not created. Call barsGameCreate first.");
+    m()._bars_game_apply_choice(barsGameHandle, index);
+}
+export function barsGameIsEnded() {
+    if (!moduleInstance || barsGameHandle === null)
+        return true;
+    return m()._bars_game_is_ended(barsGameHandle) !== 0;
+}
+export function barsGameStateSize() {
+    if (!moduleInstance || barsGameHandle === null)
+        return 0;
+    return m()._bars_game_state_size(barsGameHandle);
+}
+export function barsGameMaxVal() {
+    if (!moduleInstance || barsGameHandle === null)
+        return 2000;
+    return m()._bars_game_max_val(barsGameHandle);
+}
 // --- Linear recurrence (opaque handle) ---
 const LR_DEFAULT_THRESHOLD = 20;
 let lrHandle = null;

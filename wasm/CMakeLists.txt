@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 # Shared implementation sources compiled for each active toolchain/profile.
 set(TSL_CORE_SOURCES
+        src/bars_game.cpp
         src/comb.cpp
         src/game_of_life.cpp
         src/modular_number.cpp
@@ -13,6 +14,7 @@ set(TSL_CORE_SOURCES
 )
 
 set(TSL_CORE_HEADERS
+        src/bars_game.h
         src/comb.h
         src/game_of_life.h
         src/helper.h
@@ -57,7 +59,7 @@ if(CMAKE_C_COMPILER MATCHES "emcc")
     )
 
     target_link_options(wasm_sample PRIVATE
-            -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_matrix_det,_gol_create,_gol_destroy,_gol_init,_gol_random_init,_gol_random_init_seed,_gol_get_seed,_gol_evolve,_gol_set_topology,_gol_get_live_cells,_lr_create,_lr_destroy,_lr_order,_lr_evaluate,_lr_characteristic_polynomial,_lr_transition_matrix_size,_lr_transition_matrix_data,_lr_evaluate_poly_at_matrix,_wasm_matrix_power,_wasm_matrix_times_const,_wasm_matrix_add,_malloc,_free
+            -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_matrix_det,_gol_create,_gol_destroy,_gol_init,_gol_random_init,_gol_random_init_seed,_gol_get_seed,_gol_evolve,_gol_set_topology,_gol_get_live_cells,_lr_create,_lr_destroy,_lr_order,_lr_evaluate,_lr_characteristic_polynomial,_lr_transition_matrix_size,_lr_transition_matrix_data,_lr_evaluate_poly_at_matrix,_wasm_matrix_power,_wasm_matrix_times_const,_wasm_matrix_add,_bars_game_create,_bars_game_destroy,_bars_game_set_seed,_bars_game_init,_bars_game_get_state,_bars_game_get_future_state,_bars_game_apply_choice,_bars_game_is_ended,_bars_game_state_size,_bars_game_num_choices,_bars_game_min_val,_bars_game_max_val,_malloc,_free
     )
 endif()
 
