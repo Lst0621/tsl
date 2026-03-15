@@ -3,10 +3,32 @@ import type {WasmSampleModule} from "./wasm/wasm_out_v1/wasm_sample";
 
 let moduleInstance: WasmSampleModule | null = null;
 
-export const modulePromise: Promise<WasmSampleModule> = wasmSample().then((m) => {
-    moduleInstance = m;
-    return m;
-});
+/** In Node, fetch() cannot load file:// URLs, so we pass the WASM binary directly. */
+async function createModulePromise(): Promise<WasmSampleModule> {
+    const g = typeof globalThis !== "undefined" ? globalThis : undefined;
+    const proc = g && (g as { process?: { versions?: { node?: string } } }).process;
+    const inNode = typeof proc?.versions?.node === "string";
+    if (inNode) {
+        const nodeFs = "node:fs";
+        const nodeUrl = "node:url";
+        const nodePath = "node:path";
+        const fs = (await import(nodeFs)) as { readFileSync: (p: string) => Uint8Array };
+        const url = (await import(nodeUrl)) as { fileURLToPath: (u: URL | string) => string };
+        const path = (await import(nodePath)) as { dirname: (p: string) => string; join: (...p: string[]) => string };
+        const __filename = url.fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const wasmPath = path.join(__dirname, "wasm", "wasm_out_v1", "wasm_sample.wasm");
+        const wasmBinary = fs.readFileSync(wasmPath);
+        const mod = await wasmSample({ wasmBinary });
+        moduleInstance = mod;
+        return mod;
+    }
+    const mod = await wasmSample();
+    moduleInstance = mod;
+    return mod;
+}
+
+export const modulePromise: Promise<WasmSampleModule> = createModulePromise();
 
 /** Call this early (e.g. app startup) to ensure sync APIs are usable later. */
 function initWasm(): Promise<WasmSampleModule> {

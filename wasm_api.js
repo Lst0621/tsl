@@ -1,9 +1,31 @@
 import wasmSample from "./wasm/wasm_out_v1/wasm_sample.js";
 let moduleInstance = null;
-export const modulePromise = wasmSample().then((m) => {
-    moduleInstance = m;
-    return m;
-});
+/** In Node, fetch() cannot load file:// URLs, so we pass the WASM binary directly. */
+async function createModulePromise() {
+    var _a;
+    const g = typeof globalThis !== "undefined" ? globalThis : undefined;
+    const proc = g && g.process;
+    const inNode = typeof ((_a = proc === null || proc === void 0 ? void 0 : proc.versions) === null || _a === void 0 ? void 0 : _a.node) === "string";
+    if (inNode) {
+        const nodeFs = "node:fs";
+        const nodeUrl = "node:url";
+        const nodePath = "node:path";
+        const fs = (await import(nodeFs));
+        const url = (await import(nodeUrl));
+        const path = (await import(nodePath));
+        const __filename = url.fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const wasmPath = path.join(__dirname, "wasm", "wasm_out_v1", "wasm_sample.wasm");
+        const wasmBinary = fs.readFileSync(wasmPath);
+        const mod = await wasmSample({ wasmBinary });
+        moduleInstance = mod;
+        return mod;
+    }
+    const mod = await wasmSample();
+    moduleInstance = mod;
+    return mod;
+}
+export const modulePromise = createModulePromise();
 /** Call this early (e.g. app startup) to ensure sync APIs are usable later. */
 function initWasm() {
     return modulePromise;
