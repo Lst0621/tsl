@@ -82,7 +82,8 @@ long long LinearRecurrence::evaluate_matrix(
     const Matrix<long long> identity(identity_data);
 
     const Matrix<long long> transition_pow =
-        power(transition_matrix_, n - (k - 1), identity);
+        monoid_power(transition_matrix_,
+                     static_cast<unsigned long long>(n - (k - 1)), identity);
 
     std::vector<std::vector<long long>> state_data(k,
                                                    std::vector<long long>(1));

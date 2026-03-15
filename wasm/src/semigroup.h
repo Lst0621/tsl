@@ -1,8 +1,10 @@
 #pragma once
 
 #include <algorithm>
-#include <stdexcept>
+#include <optional>
 #include <vector>
+
+#include "set_utils.h"
 
 /**
  * Generic semigroup generator template.
@@ -23,36 +25,103 @@ std::vector<T> generate_semigroup(const std::vector<T>& generators,
                                   const bool is_abelian = false);
 
 /**
- * Generic power function using binary exponentiation.
- * Implements fast exponentiation: a^(2n) = a^n * a^n
- * Useful for semigroups where multiplication is the operation.
- *
- * @tparam T The element type. Must support operator*.
- * @param base The element to raise to a power
- * @param exp The exponent (must be non-negative)
- * @param identity The identity element for multiplication (e.g., 1 for numbers)
- * @return base raised to power exp
- * @throws std::invalid_argument if exp is negative
+ * Semigroup power: base^exp for exp >= 1 (no identity). Default op = operator*.
+ * Binary exponentiation. exp must be >= 1; if exp == 0, returns base
+ * (documented as invalid).
  */
 template <typename T>
-T power(const T& base, unsigned long long exp, const T& identity) {
+T semigroup_power(const T& base, unsigned long long exp) {
+    return semigroup_power(base, exp,
+                           [](const T& a, const T& b) { return a * b; });
+}
+
+/**
+ * Semigroup power with custom binary op. exp >= 1.
+ */
+template <typename T, typename BinaryOp>
+T semigroup_power(const T& base, unsigned long long exp, BinaryOp op) {
+    if (exp == 0) {
+        return base;
+    }
+    T result = base;
+    T current = base;
+    exp--;
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            result = op(result, current);
+        }
+        current = op(current, current);
+        exp /= 2;
+    }
+    return result;
+}
+
+/**
+ * Monoid power: base^exp for exp >= 0. Default identity T(), default op =
+ * operator*. exp == 0 returns identity; exp >= 1 returns semigroup_power(base,
+ * exp).
+ */
+template <typename T>
+T monoid_power(const T& base, unsigned long long exp) {
+    if (exp == 0) {
+        return T();
+    }
+    return semigroup_power(base, exp);
+}
+
+/**
+ * Monoid power with explicit identity. Default op = operator*.
+ */
+template <typename T>
+T monoid_power(const T& base, unsigned long long exp, const T& identity) {
     if (exp == 0) {
         return identity;
     }
+    return semigroup_power(base, exp);
+}
 
-    T result = identity;
-    T current = base;
-
-    // Binary exponentiation
-    while (exp > 0) {
-        if (exp % 2 == 1) {
-            result = result * current;
-        }
-        current = current * current;
-        exp /= 2;
+/**
+ * Monoid power with explicit identity and custom op.
+ */
+template <typename T, typename BinaryOp>
+T monoid_power(const T& base, unsigned long long exp, const T& identity,
+               BinaryOp op) {
+    if (exp == 0) {
+        return identity;
     }
+    return semigroup_power(base, exp, op);
+}
 
-    return result;
+/**
+ * Group power: base^exp for any integer exp. Uses identity and inverse.
+ * exp >= 0: monoid_power(base, exp, identity) [or with op].
+ * exp < 0: monoid_power(inverse(base), -exp, identity) i.e. (base^(-1))^|exp|.
+ * Default op = operator*; inverse is a callable T -> T (no default;
+ * type-specific).
+ */
+template <typename T, typename InverseOp>
+T group_power(const T& base, long long exp, const T& identity,
+              InverseOp inverse_op) {
+    if (exp >= 0) {
+        return monoid_power(base, static_cast<unsigned long long>(exp),
+                            identity);
+    }
+    return monoid_power(inverse_op(base), static_cast<unsigned long long>(-exp),
+                        identity);
+}
+
+/**
+ * Group power with custom op.
+ */
+template <typename T, typename InverseOp, typename BinaryOp>
+T group_power(const T& base, long long exp, const T& identity,
+              InverseOp inverse_op, BinaryOp op) {
+    if (exp >= 0) {
+        return monoid_power(base, static_cast<unsigned long long>(exp),
+                            identity, op);
+    }
+    return monoid_power(inverse_op(base), static_cast<unsigned long long>(-exp),
+                        identity, op);
 }
 
 /**
@@ -138,4 +207,224 @@ bool is_closure(const std::vector<T>& generators,
     // If closure size equals generators size, no new elements were created
     // (closed)
     return closure.size() == generators.size();
+}
+
+/**
+ * Check associativity: for all a,b,c, (a*b)*c == a*(b*c).
+ * Uses cartesian product of three copies of elements.
+ */
+template <typename T>
+bool is_associative(const std::vector<T>& elements) {
+    if (elements.empty()) {
+        return true;
+    }
+    std::vector<std::vector<T>> triple_input = {elements, elements, elements};
+    std::vector<std::vector<T>> triples = cartesian_product(triple_input);
+    for (const std::vector<T>& row : triples) {
+        const T& a = row[0];
+        const T& b = row[1];
+        const T& c = row[2];
+        T ab = a * b;
+        T abc_1 = ab * c;
+        T bc = b * c;
+        T abc_2 = a * bc;
+        if (!(abc_1 == abc_2)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Idempotent power (Floyd-style): smallest i >= 1 such that item^i ==
+ * item^(2i). limit == -1 means no limit. Returns optional (power, idempotent);
+ * nullopt if not found within limit.
+ */
+template <typename T>
+std::optional<std::pair<size_t, T>> get_idempotent_power(const T& item,
+                                                         const int limit = -1) {
+    T power_t = item;
+    T square = item * item;
+    T power_2t = square;
+    for (size_t i = 1; limit < 0 || i < static_cast<size_t>(limit); i++) {
+        if (power_t == power_2t) {
+            return std::make_pair(i, power_t);
+        }
+        power_t = power_t * item;
+        power_2t = power_2t * square;
+    }
+    return std::nullopt;
+}
+
+/**
+ * All elements x such that x*x == x.
+ */
+template <typename T>
+std::vector<T> get_all_idempotent_elements(const std::vector<T>& elements) {
+    std::vector<T> out;
+    for (const T& x : elements) {
+        if (x * x == x) {
+            out.push_back(x);
+        }
+    }
+    return out;
+}
+
+/**
+ * Maximum idempotent power over all elements (or 0 if none).
+ */
+template <typename T>
+size_t get_highest_idempotent_power(const std::vector<T>& elements,
+                                    const int limit = -1) {
+    size_t max_power = 0;
+    for (const T& item : elements) {
+        auto opt = get_idempotent_power(item, limit);
+        if (opt.has_value()) {
+            if (opt->first > max_power) {
+                max_power = opt->first;
+            }
+        }
+    }
+    return max_power;
+}
+
+/**
+ * True iff for all i,j: elements[i]*elements[j] == elements[j]*elements[i].
+ */
+template <typename T>
+bool is_abelian(const std::vector<T>& elements) {
+    size_t len = elements.size();
+    for (size_t i = 0; i < len; i++) {
+        for (size_t j = 0; j < i; j++) {
+            if (!(elements[i] * elements[j] == elements[j] * elements[i])) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+namespace internal {
+
+template <typename T>
+int get_definite_k_common(const std::vector<T>& elements,
+                          bool multiply_idempotent_on_right) {
+    size_t highest = get_highest_idempotent_power(elements);
+    if (highest == 0) {
+        return -1;
+    }
+    std::vector<T> candidates;
+    candidates.reserve(elements.size());
+    for (const T& item : elements) {
+        candidates.push_back(
+            semigroup_power(item, static_cast<unsigned long long>(highest)));
+    }
+    std::vector<std::vector<T>> pair_input = {elements, candidates};
+    std::vector<std::vector<T>> pairs = cartesian_product(pair_input);
+    for (const std::vector<T>& row : pairs) {
+        const T& element = row[0];
+        const T& candidate = row[1];
+        T product = multiply_idempotent_on_right ? (element * candidate)
+                                                 : (candidate * element);
+        if (!(product == candidate)) {
+            return -1;
+        }
+    }
+    return static_cast<int>(highest);
+}
+
+}  // namespace internal
+
+/**
+ * Definite k (right ideal of idempotents).
+ */
+template <typename T>
+int get_definite_k(const std::vector<T>& elements) {
+    return internal::get_definite_k_common(elements, true);
+}
+
+/**
+ * Reverse definite k (left ideal of idempotents).
+ */
+template <typename T>
+int get_reverse_definite_k(const std::vector<T>& elements) {
+    return internal::get_definite_k_common(elements, false);
+}
+
+/**
+ * Aperiodic: every element has idempotent power and e*x == e for that
+ * idempotent. Returns max such power, or -1 if not aperiodic.
+ */
+template <typename T>
+int is_aperiodic(const std::vector<T>& elements, const int limit = -1) {
+    size_t max_power = 1;
+    for (const T& element : elements) {
+        auto opt = get_idempotent_power(element, limit);
+        if (!opt.has_value()) {
+            return -1;
+        }
+        T idem = opt->second;
+        if (!(idem * element == idem)) {
+            return -1;
+        }
+        if (opt->first > max_power) {
+            max_power = opt->first;
+        }
+    }
+    return static_cast<int>(max_power);
+}
+
+/**
+ * Monoid: closure and existence of identity e with e*a == a*e == a for all a.
+ * Returns optional identity; nullopt if not a monoid.
+ */
+template <typename T>
+std::optional<T> is_monoid(const std::vector<T>& elements,
+                           const bool is_abelian = false) {
+    if (!is_closure(elements, is_abelian)) {
+        return std::nullopt;
+    }
+    std::vector<T> idempotents = get_all_idempotent_elements(elements);
+    for (const T& idem : idempotents) {
+        bool is_identity = true;
+        for (const T& a : elements) {
+            if (!(idem * a == a) || !(a * idem == a)) {
+                is_identity = false;
+                break;
+            }
+        }
+        if (is_identity) {
+            return idem;
+        }
+    }
+    return std::nullopt;
+}
+
+/**
+ * Group: monoid and every element has an inverse.
+ * Returns optional identity; nullopt if not a group.
+ */
+template <typename T>
+std::optional<T> is_group(const std::vector<T>& elements,
+                          const bool is_abelian = false) {
+    std::optional<T> identity_opt = is_monoid(elements, is_abelian);
+    if (!identity_opt.has_value()) {
+        return std::nullopt;
+    }
+    T identity = *identity_opt;
+    for (const T& x : elements) {
+        bool has_inverse = false;
+        for (const T& y : elements) {
+            if (x * y == identity) {
+                if (y * x == identity) {
+                    has_inverse = true;
+                }
+                break;
+            }
+        }
+        if (!has_inverse) {
+            return std::nullopt;
+        }
+    }
+    return identity;
 }

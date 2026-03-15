@@ -242,7 +242,7 @@ void wasm_matrix_power(const int* data_ptr, int n, int exponent, int* out_ptr) {
     for (int i = 0; i < n; ++i) id_data[i][i] = 1LL;
     Matrix<long long> identity(id_data);
     Matrix<long long> result =
-        power(M, static_cast<unsigned long long>(exponent), identity);
+        monoid_power(M, static_cast<unsigned long long>(exponent), identity);
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
             out_ptr[i * n + j] = static_cast<int>(result.at(i, j));

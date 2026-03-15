@@ -8,6 +8,7 @@ set(TSL_CORE_SOURCES
         src/bars_game.cpp
         src/comb.cpp
         src/game_of_life.cpp
+        src/lang_string.cpp
         src/modular_number.cpp
         src/general_linear_group.cpp
         src/linear_recurrence.cpp
@@ -18,8 +19,10 @@ set(TSL_CORE_HEADERS
         src/comb.h
         src/game_of_life.h
         src/helper.h
+        src/lang_string.h
         src/modular_number.h
         src/semigroup.h
+        src/set_utils.h
         src/matrix.h
         src/general_linear_group.h
         src/coordinate.h
@@ -84,6 +87,9 @@ if(NOT CMAKE_C_COMPILER MATCHES "emcc")
     add_executable(polynomial_test_gtest
             gtest/polynomial_test_gtest.cpp
             gtest/linear_recurrence_test_gtest.cpp
+            gtest/set_utils_test_gtest.cpp
+            gtest/semigroup_test_gtest.cpp
+            gtest/lang_string_test_gtest.cpp
     )
 
     target_link_libraries(polynomial_test_gtest

@@ -15,6 +15,14 @@ TEST(LinearRecurrenceTest, FibonacciRecursiveAndMatrixMatch) {
     }
 }
 
+TEST(LinearRecurrenceTest, EvaluateAtN0) {
+    LinearRecurrence fib({1, 1});
+    std::vector<long long> init = {0, 1};
+    EXPECT_EQ(fib.evaluate(init, 0), 0);
+    EXPECT_EQ(fib.evaluate_matrix(init, 0), 0);
+    EXPECT_EQ(fib.evaluate_recursive(init, 0), 0);
+}
+
 TEST(LinearRecurrenceTest, FibonacciLargeTerms) {
     LinearRecurrence fib({1, 1});
     std::vector<long long> init = {0, 1};
