@@ -1,5 +1,5 @@
-import wasmSample from "./wasm/wasm_out_v1/wasm_sample.js";
-import type {WasmSampleModule} from "./wasm/wasm_out_v1/wasm_sample.js";
+import wasmSample from "./wasm/wasm_out_v1/wasm_sample";
+import type {WasmSampleModule} from "./wasm/wasm_out_v1/wasm_sample";
 
 let moduleInstance: WasmSampleModule | null = null;
 

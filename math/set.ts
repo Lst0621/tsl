@@ -1,6 +1,6 @@
-import {matrix_multiply_general, transpose} from "./matrix.js";
-import {array_eq} from "./math.js";
-import {generate_semigroup} from "./semigroup.js";
+import {matrix_multiply_general, transpose} from "./matrix";
+import {array_eq} from "./math";
+import {generate_semigroup} from "./semigroup";
 
 export function is_reflexive(relation: boolean[][]) {
     let len = relation.length

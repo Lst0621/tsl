@@ -1,5 +1,5 @@
-import {gcd} from "./math.js";
-import {matrix_add_number, matrix_inverse_number, matrix_multiply_number, transpose} from "./matrix.js";
+import {gcd} from "./math";
+import {matrix_add_number, matrix_inverse_number, matrix_multiply_number, transpose} from "./matrix";
 
 export function multiply_mod_n(a: number, b: number, n: number): number {
     return a * b % n;

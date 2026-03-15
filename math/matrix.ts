@@ -1,4 +1,4 @@
-import {get_add_mod_n_function, get_multiply_mod_n_function} from "./number.js";
+import {get_add_mod_n_function, get_multiply_mod_n_function} from "./number";
 
 export function transpose<T>(a: T[][]) {
     let m = a.length

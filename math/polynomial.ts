@@ -1,7 +1,7 @@
 // Functions for polynomials. Factors are listed in ascending order of degrees
 
-import {get_sup} from "../util.js";
-import {power_to_latex} from "./latex.js";
+import {get_sup} from "../util";
+import {power_to_latex} from "./latex";
 
 function join_terms(terms: string[]) {
     if (terms.length == 0) {

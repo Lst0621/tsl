@@ -1,4 +1,4 @@
-import {cartesian_product} from "./set.js";
+import {cartesian_product} from "./set";
 
 export function generate_semigroup<T>(generators: T[],
                                       multiply: (a: T, b: T) => T,

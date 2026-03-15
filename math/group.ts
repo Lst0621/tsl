@@ -3,12 +3,12 @@ import {
     get_add_inverse_mod_n_function,
     get_add_mod_n_function,
     get_multiply_mod_n_function
-} from "./number.js";
-import {cartesian_product} from "./set.js";
-import {array_to_matrix, get_det} from "./matrix.js";
-import {get_sup} from "../util.js";
-import {array_eq} from "./math.js";
-import {generate_semigroup, get_idempotent_power} from "./semigroup.js";
+} from "./number";
+import {cartesian_product} from "./set";
+import {array_to_matrix, get_det} from "./matrix";
+import {get_sup} from "../util";
+import {array_eq} from "./math";
+import {generate_semigroup, get_idempotent_power} from "./semigroup";
 
 export function get_u_n(n: number): number[] {
     let u: number[] = []
