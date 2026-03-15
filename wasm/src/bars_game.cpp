@@ -6,7 +6,9 @@
 namespace {
 
 int uniform_int(std::mt19937& gen, int lo, int hi) {
-    if (hi <= lo) return lo;
+    if (hi <= lo) {
+        return lo;
+    }
     std::uniform_int_distribution<int> dist(lo, hi);
     return dist(gen);
 }
@@ -64,7 +66,9 @@ void BarsGame::get_state(int* out) const {
 }
 
 void BarsGame::get_future_state(int choice_index, int* out) const {
-    if (choice_index < 0 || choice_index >= config_.num_choices) return;
+    if (choice_index < 0 || choice_index >= config_.num_choices) {
+        return;
+    }
     const auto& fut = future_states_[static_cast<size_t>(choice_index)];
     for (size_t i = 0; i < fut.size(); ++i) {
         out[i] = fut[i];
@@ -72,7 +76,9 @@ void BarsGame::get_future_state(int choice_index, int* out) const {
 }
 
 void BarsGame::apply_choice(int index) {
-    if (ended_ || index < 0 || index >= config_.num_choices) return;
+    if (ended_ || index < 0 || index >= config_.num_choices) {
+        return;
+    }
     const auto& fut = future_states_[static_cast<size_t>(index)];
     const int lo = config_.min_val;
     const int hi = config_.max_val;
