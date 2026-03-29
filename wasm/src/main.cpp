@@ -139,14 +139,47 @@ int gol_get_live_cells(void* handle, int* out_xy, int max_count) {
 }
 
 // --- Linear recurrence (opaque handle = LinearRecurrence*) ---
-// All recurrence-related data uses long long in C++; we pass int32 ptrs and
-// convert. Output buffers are int32 (truncated from long long for v1).
+// Recurrence coefficients / initial values are exact rationals.
+// WASM wire format uses HEAP32 (int32) with packed int64 parts:
+// - int64 is two int32 words: low32, high32 (two's complement).
+// - Rational is four int32 words: m_lo, m_hi, n_lo, n_hi.
+
+static inline std::int64_t read_i64(const int* p) {
+    const std::uint64_t lo = static_cast<std::uint32_t>(p[0]);
+    const std::uint64_t hi = static_cast<std::uint32_t>(p[1]);
+    const std::uint64_t u = lo | (hi << 32);
+    return static_cast<std::int64_t>(u);
+}
+
+static inline void write_i64(int* p, std::int64_t v) {
+    const std::uint64_t u = static_cast<std::uint64_t>(v);
+    p[0] = static_cast<int>(static_cast<std::uint32_t>(u & 0xFFFFFFFFu));
+    p[1] = static_cast<int>(
+        static_cast<std::uint32_t>((u >> 32) & 0xFFFFFFFFu));
+}
+
+static inline LinearRecurrence::Coeff read_rational(const int* p) {
+    const std::int64_t m = read_i64(p);
+    const std::int64_t n = read_i64(p + 2);
+    return LinearRecurrence::Coeff(static_cast<long long>(m),
+                                   static_cast<long long>(n));
+}
+
+static inline void write_rational(int* p, const LinearRecurrence::Coeff& r) {
+    write_i64(p, static_cast<std::int64_t>(r.m()));
+    write_i64(p + 2, static_cast<std::int64_t>(r.n()));
+}
 
 EMSCRIPTEN_KEEPALIVE
 void* lr_create(const int* coeffs_ptr, int coeffs_len,
                 int recursive_threshold) {
-    std::vector<long long> coeffs(coeffs_ptr, coeffs_ptr + coeffs_len);
-    return new LinearRecurrence(coeffs,
+    std::vector<LinearRecurrence::Coeff> coeffs;
+    coeffs.reserve(static_cast<size_t>(coeffs_len));
+    for (int i = 0; i < coeffs_len; ++i) {
+        coeffs.push_back(read_rational(coeffs_ptr + 4 * i));
+    }
+    return new LinearRecurrence(
+        coeffs,
                                 static_cast<size_t>(recursive_threshold));
 }
 
@@ -160,21 +193,22 @@ int lr_order(void* handle) {
     return static_cast<int>(static_cast<LinearRecurrence*>(handle)->order());
 }
 
-// Writes result as int64 (low 32 bits at result_ptr, high 32 at result_ptr+4).
+// Writes result as packed rational (4 int32 words).
 EMSCRIPTEN_KEEPALIVE
 void lr_evaluate(void* handle, const int* init_ptr, int init_len, int n,
                  int* result_ptr) {
-    std::vector<long long> init(init_ptr, init_ptr + init_len);
-    long long val = static_cast<LinearRecurrence*>(handle)->evaluate(
+    std::vector<LinearRecurrence::Coeff> init;
+    init.reserve(static_cast<size_t>(init_len));
+    for (int i = 0; i < init_len; ++i) {
+        init.push_back(read_rational(init_ptr + 4 * i));
+    }
+    LinearRecurrence::Coeff val = static_cast<LinearRecurrence*>(handle)->evaluate(
         init, static_cast<size_t>(n));
-    std::uint32_t low = static_cast<std::uint32_t>(val & 0xFFFFFFFFu);
-    std::uint32_t high = static_cast<std::uint32_t>((val >> 32) & 0xFFFFFFFFu);
-    result_ptr[0] = static_cast<int>(low);
-    result_ptr[1] = static_cast<int>(high);
+    write_rational(result_ptr, val);
 }
 
-// Writes characteristic polynomial coefficients (ascending degree) as int32;
-// returns count.
+// Writes characteristic polynomial coefficients (ascending degree) as packed
+// rationals; returns count in coefficients.
 EMSCRIPTEN_KEEPALIVE
 int lr_characteristic_polynomial(void* handle, int* out_ptr, int max_len) {
     const auto& coeffs = static_cast<LinearRecurrence*>(handle)
@@ -183,7 +217,7 @@ int lr_characteristic_polynomial(void* handle, int* out_ptr, int max_len) {
     int len = static_cast<int>(coeffs.size());
     if (len > max_len) len = max_len;
     for (int i = 0; i < len; ++i) {
-        out_ptr[i] = static_cast<int>(coeffs[i]);
+        write_rational(out_ptr + 4 * i, coeffs[static_cast<size_t>(i)]);
     }
     return len;
 }
@@ -194,11 +228,12 @@ int lr_transition_matrix_size(void* handle) {
         static_cast<LinearRecurrence*>(handle)->transition_matrix().get_rows());
 }
 
-// Writes transition matrix row-major as int32 (truncated). out_ptr must have at
-// least order² elements.
+// Writes transition matrix row-major as packed rationals. out_ptr must have at
+// least 4*order² int32 elements; max_len counts matrix entries (not int32
+// words).
 EMSCRIPTEN_KEEPALIVE
 void lr_transition_matrix_data(void* handle, int* out_ptr, int max_len) {
-    const Matrix<long long>& M =
+    const Matrix<LinearRecurrence::Coeff>& M =
         static_cast<LinearRecurrence*>(handle)->transition_matrix();
     size_t rows = M.get_rows();
     size_t cols = M.get_cols();
@@ -206,16 +241,17 @@ void lr_transition_matrix_data(void* handle, int* out_ptr, int max_len) {
     for (size_t i = 0; i < rows && idx < static_cast<size_t>(max_len); ++i) {
         for (size_t j = 0; j < cols && idx < static_cast<size_t>(max_len);
              ++j) {
-            out_ptr[idx++] = static_cast<int>(M.at(i, j));
+            write_rational(out_ptr + 4 * idx, M.at(i, j));
+            idx++;
         }
     }
 }
 
-// p(M) for characteristic polynomial; writes n×n row-major as int32.
+// p(M) for characteristic polynomial; writes n×n row-major as packed rationals.
 EMSCRIPTEN_KEEPALIVE
 void lr_evaluate_poly_at_matrix(void* handle, int* out_ptr, int max_len) {
     LinearRecurrence* lr = static_cast<LinearRecurrence*>(handle);
-    Matrix<long long> pM =
+    Matrix<LinearRecurrence::Coeff> pM =
         lr->characteristic_polynomial().apply(lr->transition_matrix());
     size_t rows = pM.get_rows();
     size_t cols = pM.get_cols();
@@ -223,7 +259,8 @@ void lr_evaluate_poly_at_matrix(void* handle, int* out_ptr, int max_len) {
     for (size_t i = 0; i < rows && idx < static_cast<size_t>(max_len); ++i) {
         for (size_t j = 0; j < cols && idx < static_cast<size_t>(max_len);
              ++j) {
-            out_ptr[idx++] = static_cast<int>(pM.at(i, j));
+            write_rational(out_ptr + 4 * idx, pM.at(i, j));
+            idx++;
         }
     }
 }

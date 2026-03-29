@@ -22,6 +22,7 @@ set(TSL_CORE_HEADERS
         src/lang_string.h
         src/modular_number.h
         src/rational.h
+        src/rational_function.h
         src/semigroup.h
         src/set_utils.h
         src/matrix.h
@@ -93,6 +94,7 @@ if(NOT CMAKE_C_COMPILER MATCHES "emcc")
                 gtest/semigroup_test_gtest.cpp
                 gtest/lang_string_test_gtest.cpp
                 gtest/rational_test_gtest.cpp
+                gtest/rational_function_test_gtest.cpp
         )
 
         target_link_libraries(tsl_core_tests

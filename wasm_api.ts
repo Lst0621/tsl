@@ -401,17 +401,107 @@ export function barsGameMaxVal(): number {
 const LR_DEFAULT_THRESHOLD = 20;
 let lrHandle: number | null = null;
 
-export function lrCreate(coeffs: number[], recursiveThreshold: number = LR_DEFAULT_THRESHOLD): void {
+export type I64Parts = { lo: number; hi: number };
+export type RationalI64Parts = { m: I64Parts; n: I64Parts };
+
+const U32 = 0x100000000;
+
+function i64FromNumber(x: number): I64Parts {
+    if (!Number.isFinite(x) || !Number.isSafeInteger(x)) {
+        throw new Error("Expected a safe integer for int64 conversion.");
+    }
+    // Pack into two's complement i64 split into (lo, hi).
+    const neg = x < 0;
+    let abs = Math.abs(x);
+    const loU = abs % U32;
+    let hiU = (abs - loU) / U32;
+
+    let lo = (loU >>> 0);
+    if (neg) {
+        // Two's complement: (~u + 1)
+        lo = ((~lo + 1) >>> 0);
+        hiU = (~hiU) >>> 0;
+        if (lo === 0) {
+            hiU = (hiU + 1) >>> 0;
+        }
+    }
+    const hi = (hiU | 0);
+    return { lo: lo | 0, hi };
+}
+
+function rationalFromInt(x: number): RationalI64Parts {
+    return { m: i64FromNumber(x), n: { lo: 1, hi: 0 } };
+}
+
+function toRationalParts(x: number | RationalI64Parts): RationalI64Parts {
+    if (typeof x === "number") {
+        return rationalFromInt(x);
+    }
+    return x;
+}
+
+function writeI64ToHeap32(HEAP32: Int32Array, base: number, idxWords: number, v: I64Parts): void {
+    HEAP32[base + idxWords] = v.lo;
+    HEAP32[base + idxWords + 1] = v.hi;
+}
+
+function writeRationalToHeap32(HEAP32: Int32Array, base: number, idxRational: number, r: RationalI64Parts): void {
+    const off = idxRational * 4;
+    writeI64ToHeap32(HEAP32, base, off, r.m);
+    writeI64ToHeap32(HEAP32, base, off + 2, r.n);
+}
+
+function readI64FromHeap32(HEAP32: Int32Array, base: number, idxWords: number): I64Parts {
+    return { lo: HEAP32[base + idxWords], hi: HEAP32[base + idxWords + 1] };
+}
+
+function readRationalFromHeap32(HEAP32: Int32Array, base: number, idxRational: number): RationalI64Parts {
+    const off = idxRational * 4;
+    return { m: readI64FromHeap32(HEAP32, base, off), n: readI64FromHeap32(HEAP32, base, off + 2) };
+}
+
+function i64ToSafeNumber(p: I64Parts, context: string): number {
+    // Only convert when value fits in safe integer range.
+    // Fast-path: i32
+    if (p.hi === 0) {
+        const v = (p.lo >>> 0);
+        if (!Number.isSafeInteger(v)) {
+            throw new Error(`${context}: value not a safe integer.`);
+        }
+        return v;
+    }
+    if (p.hi === -1) {
+        const v = (p.lo >>> 0) - U32;
+        if (!Number.isSafeInteger(v)) {
+            throw new Error(`${context}: value not a safe integer.`);
+        }
+        return v;
+    }
+    // General case: may still be safe, but we avoid bigint in this project.
+    throw new Error(`${context}: int64 value outside supported JS safe range.`);
+}
+
+function requireIntegerRational(r: RationalI64Parts, context: string): number {
+    if (!(r.n.hi === 0 && (r.n.lo >>> 0) === 1)) {
+        throw new Error(`${context}: expected integer (denominator 1).`);
+    }
+    return i64ToSafeNumber(r.m, context);
+}
+
+export function lrCreate(coeffs: Array<number | RationalI64Parts>, recursiveThreshold: number = LR_DEFAULT_THRESHOLD): void {
     if (!moduleInstance) throw new Error("WASM module not initialized.");
     if (lrHandle !== null) {
         moduleInstance._lr_destroy(lrHandle);
     }
     const HEAP32 = getHeap32();
-    const arr32 = toInt32Array(coeffs);
     const base = 2048;
-    if (HEAP32.length < base + arr32.length) throw new Error("WASM memory exhausted");
-    copyToHeap(HEAP32, arr32, base);
-    lrHandle = moduleInstance._lr_create(base * 4, arr32.length, recursiveThreshold);
+    const len = coeffs.length;
+    const words = len * 4;
+    if (HEAP32.length < base + words) throw new Error("WASM memory exhausted");
+    for (let i = 0; i < len; i++) {
+        writeRationalToHeap32(HEAP32, base, i, toRationalParts(coeffs[i]));
+    }
+    lrHandle = moduleInstance._lr_create(base * 4, len, recursiveThreshold);
 }
 
 export function lrDestroy(): void {
@@ -427,30 +517,49 @@ export function lrOrder(): number {
 }
 
 /** Returns a(n) as number (full int64 range via low + high*2^32; fits in number for |value| < 2^53). */
-export function lrEvaluate(initialValues: number[], n: number): number {
+export function lrEvaluateRational(initialValues: Array<number | RationalI64Parts>, n: number): RationalI64Parts {
     if (!moduleInstance || lrHandle === null) throw new Error("Linear recurrence not created. Call lrCreate first.");
     const HEAP32 = getHeap32();
-    const init32 = toInt32Array(initialValues);
     const initBase = 2048;
     const resultBase = 4096;
-    if (HEAP32.length < resultBase + 2) throw new Error("WASM memory exhausted");
-    copyToHeap(HEAP32, init32, initBase);
-    moduleInstance._lr_evaluate(lrHandle, initBase * 4, init32.length, n, resultBase * 4);
-    const low = HEAP32[resultBase];
-    const high = HEAP32[resultBase + 1];
-    return low + high * 0x100000000;
+    const len = initialValues.length;
+    const initWords = len * 4;
+    if (HEAP32.length < resultBase + 4) throw new Error("WASM memory exhausted");
+    if (HEAP32.length < initBase + initWords) throw new Error("WASM memory exhausted");
+    for (let i = 0; i < len; i++) {
+        writeRationalToHeap32(HEAP32, initBase, i, toRationalParts(initialValues[i]));
+    }
+    moduleInstance._lr_evaluate(lrHandle, initBase * 4, len, n, resultBase * 4);
+    return readRationalFromHeap32(HEAP32, resultBase, 0);
 }
 
-export function lrGetCharacteristicPolynomial(): number[] {
+/** Back-compat: returns integer a(n) as number (only if denominator == 1). */
+export function lrEvaluate(initialValues: Array<number | RationalI64Parts>, n: number): number {
+    const r = lrEvaluateRational(initialValues, n);
+    return requireIntegerRational(r, "lrEvaluate");
+}
+
+export function lrGetCharacteristicPolynomialRational(): RationalI64Parts[] {
     if (!moduleInstance || lrHandle === null) throw new Error("Linear recurrence not created. Call lrCreate first.");
     const order = moduleInstance._lr_order(lrHandle);
     const maxLen = order + 1;
     const HEAP32 = getHeap32();
     const base = 2048;
-    if (HEAP32.length < base + maxLen) throw new Error("WASM memory exhausted");
+    const words = maxLen * 4;
+    if (HEAP32.length < base + words) throw new Error("WASM memory exhausted");
     const len = moduleInstance._lr_characteristic_polynomial(lrHandle, base * 4, maxLen);
+    const out: RationalI64Parts[] = [];
+    for (let i = 0; i < len; i++) out.push(readRationalFromHeap32(HEAP32, base, i));
+    return out;
+}
+
+/** Back-compat: returns integer coefficients (only if all denominators == 1). */
+export function lrGetCharacteristicPolynomial(): number[] {
+    const rs = lrGetCharacteristicPolynomialRational();
     const out: number[] = [];
-    for (let i = 0; i < len; i++) out.push(HEAP32[base + i]);
+    for (let i = 0; i < rs.length; i++) {
+        out.push(requireIntegerRational(rs[i], "lrGetCharacteristicPolynomial"));
+    }
     return out;
 }
 
@@ -459,29 +568,51 @@ export function lrGetTransitionMatrixSize(): number {
     return moduleInstance._lr_transition_matrix_size(lrHandle);
 }
 
-export function lrGetTransitionMatrixData(): number[] {
+export function lrGetTransitionMatrixDataRational(): RationalI64Parts[] {
     if (!moduleInstance || lrHandle === null) throw new Error("Linear recurrence not created. Call lrCreate first.");
     const n = moduleInstance._lr_transition_matrix_size(lrHandle);
     const size = n * n;
     const HEAP32 = getHeap32();
     const base = 2048;
-    if (HEAP32.length < base + size) throw new Error("WASM memory exhausted");
+    const words = size * 4;
+    if (HEAP32.length < base + words) throw new Error("WASM memory exhausted");
     moduleInstance._lr_transition_matrix_data(lrHandle, base * 4, size);
-    const out: number[] = [];
-    for (let i = 0; i < size; i++) out.push(HEAP32[base + i]);
+    const out: RationalI64Parts[] = [];
+    for (let i = 0; i < size; i++) out.push(readRationalFromHeap32(HEAP32, base, i));
     return out;
 }
 
-export function lrEvaluatePolyAtMatrix(): number[] {
+/** Back-compat: returns integer matrix entries (only if all denominators == 1). */
+export function lrGetTransitionMatrixData(): number[] {
+    const rs = lrGetTransitionMatrixDataRational();
+    const out: number[] = [];
+    for (let i = 0; i < rs.length; i++) {
+        out.push(requireIntegerRational(rs[i], "lrGetTransitionMatrixData"));
+    }
+    return out;
+}
+
+export function lrEvaluatePolyAtMatrixRational(): RationalI64Parts[] {
     if (!moduleInstance || lrHandle === null) throw new Error("Linear recurrence not created. Call lrCreate first.");
     const n = moduleInstance._lr_transition_matrix_size(lrHandle);
     const size = n * n;
     const HEAP32 = getHeap32();
     const base = 2048;
-    if (HEAP32.length < base + size) throw new Error("WASM memory exhausted");
+    const words = size * 4;
+    if (HEAP32.length < base + words) throw new Error("WASM memory exhausted");
     moduleInstance._lr_evaluate_poly_at_matrix(lrHandle, base * 4, size);
+    const out: RationalI64Parts[] = [];
+    for (let i = 0; i < size; i++) out.push(readRationalFromHeap32(HEAP32, base, i));
+    return out;
+}
+
+/** Back-compat: returns integer matrix entries (only if all denominators == 1). */
+export function lrEvaluatePolyAtMatrix(): number[] {
+    const rs = lrEvaluatePolyAtMatrixRational();
     const out: number[] = [];
-    for (let i = 0; i < size; i++) out.push(HEAP32[base + i]);
+    for (let i = 0; i < rs.length; i++) {
+        out.push(requireIntegerRational(rs[i], "lrEvaluatePolyAtMatrix"));
+    }
     return out;
 }
 
