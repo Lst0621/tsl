@@ -85,3 +85,32 @@ TEST(RationalTest, ImplicitWideningConversionAllowed) {
     EXPECT_EQ(b.n(), 2);
 }
 
+TEST(RationalTest, ToDoubleWholeNumber) {
+    tsl::Rational<int> r(3);
+    EXPECT_DOUBLE_EQ(static_cast<double>(r), 3.0);
+}
+
+TEST(RationalTest, ToDoubleFraction) {
+    tsl::Rational<int> r(1, 4);
+    EXPECT_DOUBLE_EQ(static_cast<double>(r), 0.25);
+}
+
+TEST(RationalTest, ToDoubleNegative) {
+    tsl::Rational<int> r(-3, 2);
+    EXPECT_DOUBLE_EQ(static_cast<double>(r), -1.5);
+}
+
+TEST(RationalTest, ToStringWholeNumber) {
+    tsl::Rational<int> r(5);
+    EXPECT_EQ(r.to_string(), "5");
+}
+
+TEST(RationalTest, ToStringFraction) {
+    tsl::Rational<int> r(1, 3);
+    EXPECT_EQ(r.to_string(), "1/3");
+}
+
+TEST(RationalTest, ToStringNegative) {
+    tsl::Rational<int> r(-2, 5);
+    EXPECT_EQ(r.to_string(), "-2/5");
+}

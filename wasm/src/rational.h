@@ -5,6 +5,7 @@
 #include <limits>
 #include <numeric>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 
 namespace tsl {
@@ -79,6 +80,17 @@ class Rational {
 
     constexpr Int m() const { return m_; }
     constexpr Int n() const { return n_; }
+
+    constexpr explicit operator double() const {
+        return static_cast<double>(m_) / static_cast<double>(n_);
+    }
+
+    std::string to_string() const {
+        if (n_ == 1) {
+            return std::to_string(m_);
+        }
+        return std::to_string(m_) + "/" + std::to_string(n_);
+    }
 
     constexpr Rational operator+() const { return *this; }
     constexpr Rational operator-() const { return Rational(-m_, n_); }

@@ -11,7 +11,6 @@ set(TSL_CORE_SOURCES
         src/lang_string.cpp
         src/modular_number.cpp
         src/general_linear_group.cpp
-        src/linear_recurrence.cpp
 )
 
 set(TSL_CORE_HEADERS
@@ -31,6 +30,8 @@ set(TSL_CORE_HEADERS
         src/topology.h
         src/polynomial.h
         src/linear_recurrence.h
+        src/complex.h
+        src/sequence_ops.h
 )
 
 add_library(tsl_core STATIC
@@ -95,6 +96,8 @@ if(NOT CMAKE_C_COMPILER MATCHES "emcc")
                 gtest/lang_string_test_gtest.cpp
                 gtest/rational_test_gtest.cpp
                 gtest/rational_function_test_gtest.cpp
+                gtest/complex_test_gtest.cpp
+                gtest/complex_qi_test_gtest.cpp
         )
 
         target_link_libraries(tsl_core_tests

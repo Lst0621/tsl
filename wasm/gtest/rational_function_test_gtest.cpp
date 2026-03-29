@@ -4,6 +4,7 @@
 
 #include "polynomial.h"
 #include "rational_function.h"
+#include "sequence_ops.h"
 
 using R = LinearRecurrence::Coeff;
 
@@ -61,12 +62,10 @@ TEST(RationalFunctionTest, ConvolutionMatchesDirectSequenceConvolution) {
     const std::vector<R> f = eval_terms(fib, init, n_terms);
     const std::vector<R> g = eval_terms(lr_g, init_g, n_terms);
 
+    const std::vector<R> expected = sequence_convolve(f, f);
+
     for (size_t n = 0; n < n_terms; ++n) {
-        R expected(0);
-        for (size_t i = 0; i <= n; ++i) {
-            expected += f[i] * f[n - i];
-        }
-        EXPECT_EQ(g[n], expected) << "Mismatch at n=" << n;
+        EXPECT_EQ(g[n], expected[n]) << "Mismatch at n=" << n;
     }
 }
 
@@ -83,15 +82,9 @@ TEST(RationalFunctionTest, ConvolutionFibFibFirst200TermsPolynomialVsDirectVsRec
     std::vector<R> coeffs_poly = G_poly.get_coefficients();
     coeffs_poly.resize(n_terms, R(0));
 
-    // Method 2: direct convolution sum.
-    std::vector<R> coeffs_direct(n_terms, R(0));
-    for (size_t n = 0; n < n_terms; ++n) {
-        R s(0);
-        for (size_t i = 0; i <= n; ++i) {
-            s += f[i] * f[n - i];
-        }
-        coeffs_direct[n] = s;
-    }
+    // Method 2: sequence_convolve (inner product + reverse).
+    std::vector<R> coeffs_direct = sequence_convolve(f, f);
+    coeffs_direct.resize(n_terms, R(0));
 
     // Method 3: generating-function product -> linear recurrence -> evaluate.
     const auto [lr_g, init_g] = convolve(fib, init, fib, init);
