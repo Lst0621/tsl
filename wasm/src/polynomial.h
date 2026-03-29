@@ -1,8 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <cmath>
-#include <functional>
 #include <map>
 #include <stdexcept>
 #include <utility>

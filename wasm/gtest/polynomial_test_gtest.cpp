@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include "comb.h"
-#include "linear_recurrence.h"
 #include "polynomial.h"
 
 // Specialized traits for double with floating-point tolerance

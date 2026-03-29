@@ -1,7 +1,6 @@
 #include "comb.h"
 
 #include <algorithm>
-#include <functional>
 #include <unordered_map>
 
 #include "helper.h"
