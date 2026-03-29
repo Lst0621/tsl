@@ -1,6 +1,6 @@
 #!/bin/bash
-# Native C++ test build script for Polynomial tests using Google Test
-# This is for testing the polynomial library natively (not WASM)
+# Native C++ test build script for tsl_core tests using Google Test
+# This is for testing the tsl_core library natively (not WASM)
 #
 # RULE: Always use build.sh for WASM builds.
 #       Use this script (test_build.sh) for native C++ tests with Google Test.
@@ -24,11 +24,11 @@ make -j
 # Run the tests
 echo ""
 echo "=========================================="
-echo "Running Polynomial Tests with Google Test"
+echo "Running tsl_core Tests with Google Test"
 echo "=========================================="
 echo ""
 
-./polynomial_test_gtest
+./tsl_core_tests
 
 exit_code=$?
 

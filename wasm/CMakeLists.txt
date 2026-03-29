@@ -21,6 +21,7 @@ set(TSL_CORE_HEADERS
         src/helper.h
         src/lang_string.h
         src/modular_number.h
+        src/rational.h
         src/semigroup.h
         src/set_utils.h
         src/matrix.h
@@ -83,20 +84,24 @@ if(NOT CMAKE_C_COMPILER MATCHES "emcc")
 
     include(GoogleTest)
 
-    # Create polynomial test executable (native, not WASM).
-    add_executable(polynomial_test_gtest
-            gtest/polynomial_test_gtest.cpp
-            gtest/linear_recurrence_test_gtest.cpp
-            gtest/set_utils_test_gtest.cpp
-            gtest/semigroup_test_gtest.cpp
-            gtest/lang_string_test_gtest.cpp
-    )
+    # Create GoogleTest-based executable when sources exist.
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/gtest/polynomial_test_gtest.cpp")
+        add_executable(tsl_core_tests
+                gtest/polynomial_test_gtest.cpp
+                gtest/linear_recurrence_test_gtest.cpp
+                gtest/set_utils_test_gtest.cpp
+                gtest/semigroup_test_gtest.cpp
+                gtest/lang_string_test_gtest.cpp
+                gtest/rational_test_gtest.cpp
+        )
 
-    target_link_libraries(polynomial_test_gtest
-            tsl_core
-            GTest::gtest
-            GTest::gtest_main
-    )
+        target_link_libraries(tsl_core_tests
+                tsl_core
+                GTest::gtest
+                GTest::gtest_main
+        )
 
-    gtest_discover_tests(polynomial_test_gtest)
+        gtest_discover_tests(tsl_core_tests)
+    endif()
+
 endif()
