@@ -67,6 +67,67 @@ int wasm_get_gl_n_zm_size(int n, int m) {
 }
 
 EMSCRIPTEN_KEEPALIVE
+int* wasm_get_gl_n_zm(int n, int m, int* out_count) {
+    auto gl = get_gl_n_zm(n, m);
+    *out_count = static_cast<int>(gl.size());
+    int elems = *out_count * n * n;
+    int* buf = static_cast<int*>(malloc(elems * sizeof(int)));
+    for (size_t k = 0; k < gl.size(); k++) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                buf[k * n * n + i * n + j] =
+                    static_cast<int>(gl[k](i, j).get_value());
+            }
+        }
+    }
+    return buf;
+}
+
+/**
+ * Check whether a caller-supplied set of n×n matrices forms a group
+ * under multiplication.
+ *
+ * @param data       Flat row-major int32 array: count matrices, each n×n
+ * @param count      Number of matrices
+ * @param n          Matrix dimension (n×n)
+ * @param modulus    >0  → elements are in Z_modulus (ModularNumber)
+ *                    0  → plain integer arithmetic (characteristic 0)
+ * @return 1 if the set is a group, 0 otherwise
+ */
+EMSCRIPTEN_KEEPALIVE
+int wasm_is_matrix_group(int* data, int count, int n, int modulus) {
+    int elems_per = n * n;
+    if (modulus > 0) {
+        ModularNumber zero(0, modulus);
+        std::vector<Matrix<ModularNumber>> matrices;
+        matrices.reserve(count);
+        for (int k = 0; k < count; k++) {
+            std::vector<std::vector<ModularNumber>> rows(
+                n, std::vector<ModularNumber>(n, zero));
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    rows[i][j] = ModularNumber(
+                        data[k * elems_per + i * n + j], modulus);
+                }
+            }
+            matrices.emplace_back(rows);
+        }
+        return is_group(matrices).has_value() ? 1 : 0;
+    } else {
+        std::vector<Matrix<long long>> matrices;
+        matrices.reserve(count);
+        for (int k = 0; k < count; k++) {
+            std::vector<long long> flat(elems_per);
+            for (int i = 0; i < elems_per; i++) {
+                flat[i] = static_cast<long long>(data[k * elems_per + i]);
+            }
+            matrices.push_back(to_matrix<long long>(flat, n, n));
+        }
+        return is_group(matrices).has_value() ? 1 : 0;
+    }
+}
+
+EMSCRIPTEN_KEEPALIVE
 int wasm_matrix_det(int* data, int n) {
     // For square matrices: data should contain n*n elements
     int size = n * n;
@@ -81,6 +142,25 @@ int wasm_matrix_det(int* data, int n) {
     int det = mat.determinant();
 
     return det;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_matrix_inverse_mod(int* data, int n, int m, int* out) {
+    int size = n * n;
+    ModularNumber zero(0, m);
+    std::vector<std::vector<ModularNumber>> mat_data(n, std::vector<ModularNumber>(n, zero));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            mat_data[i][j] = ModularNumber(data[i * n + j], m);
+        }
+    }
+    Matrix<ModularNumber> mat(mat_data);
+    Matrix<ModularNumber> inv = mat.inverse();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            out[i * n + j] = static_cast<int>(inv(i, j).get_value());
+        }
+    }
 }
 
 // Game of Life C API (opaque handle = GameOfLife*)

@@ -257,15 +257,27 @@ std::optional<std::pair<size_t, T>> get_idempotent_power(const T& item,
 }
 
 /**
+ * Indices of all elements x such that x*x == x.
+ */
+template <typename T>
+std::vector<size_t> get_all_idempotent_indices(const std::vector<T>& elements) {
+    std::vector<size_t> out;
+    for (size_t i = 0; i < elements.size(); i++) {
+        if (elements[i] * elements[i] == elements[i]) {
+            out.push_back(i);
+        }
+    }
+    return out;
+}
+
+/**
  * All elements x such that x*x == x.
  */
 template <typename T>
 std::vector<T> get_all_idempotent_elements(const std::vector<T>& elements) {
     std::vector<T> out;
-    for (const T& x : elements) {
-        if (x * x == x) {
-            out.push_back(x);
-        }
+    for (size_t i : get_all_idempotent_indices(elements)) {
+        out.push_back(elements[i]);
     }
     return out;
 }
@@ -384,8 +396,8 @@ std::optional<T> is_monoid(const std::vector<T>& elements,
     if (!is_closure(elements, is_abelian)) {
         return std::nullopt;
     }
-    std::vector<T> idempotents = get_all_idempotent_elements(elements);
-    for (const T& idem : idempotents) {
+    for (size_t idx : get_all_idempotent_indices(elements)) {
+        const T& idem = elements[idx];
         bool is_identity = true;
         for (const T& a : elements) {
             if (!(idem * a == a) || !(a * idem == a)) {

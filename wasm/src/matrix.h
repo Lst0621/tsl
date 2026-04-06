@@ -1,10 +1,13 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "small_vector.h"
 
 /**
  * Helper to detect if T has a default constructor
@@ -48,14 +51,16 @@ struct ZeroValue<T, false> {
 };
 
 /**
- * Generic matrix class using vector<vector<T>> storage.
- * Provides efficient 2D element access and standard matrix operations.
+ * Generic matrix with contiguous row-major storage.
+ * Elements live in SmallVector<T, InlineCap> (inline up to InlineCap entries,
+ * then heap).
  *
  * @tparam T The element type (must support default construction and copying)
+ * @tparam InlineCap Inline storage cap (in entries), default 16 (= 4x4).
  */
-template <typename T>
+template <typename T, size_t InlineCap = 16>
 class Matrix {
-    std::vector<std::vector<T>> data;
+    SmallVector<T, InlineCap> flat_;
     size_t rows;
     size_t cols;
     std::optional<T> unknown_diag_scalar;
@@ -73,7 +78,7 @@ class Matrix {
         return *unknown_diag_scalar;
     }
 
-    Matrix<T> materialize_as_diag(size_t n) const {
+    Matrix<T, InlineCap> materialize_as_diag(size_t n) const {
         if (!is_unknown_scalar()) {
             return *this;
         }
@@ -81,7 +86,7 @@ class Matrix {
             throw std::invalid_argument(
                 "Cannot materialize unknown matrix with size 0");
         }
-        Matrix<T> result(n, n);
+        Matrix<T, InlineCap> result(n, n);
         for (size_t i = 0; i < n; i++) {
             result(i, i) = unknown_scalar_value();
         }
@@ -113,7 +118,7 @@ class Matrix {
         // Use compile-time check to determine how to create zero value
         if constexpr (has_default_constructor<T>::value) {
             T zero = ZeroValue<T, true>::create();
-            data.assign(m, std::vector<T>(n, zero));
+            flat_.assign(m * n, zero);
         } else {
             // This path requires at least one element to exist - would need to
             // be called differently For now, we throw an error if no default
@@ -135,7 +140,7 @@ class Matrix {
         if (m == 0 || n == 0) {
             throw std::invalid_argument("Matrix dimensions must be positive");
         }
-        data.assign(m, std::vector<T>(n, default_value));
+        flat_.assign(m * n, default_value);
     }
 
     /**
@@ -158,13 +163,9 @@ class Matrix {
             }
         }
 
-        // Copy data directly
+        flat_.reserve(rows * cols);
         for (const auto& row : source) {
-            std::vector<T> new_row;
-            for (const auto& elem : row) {
-                new_row.push_back(elem);
-            }
-            data.push_back(new_row);
+            flat_.insert_back(row.begin(), row.end());
         }
     }
 
@@ -194,13 +195,11 @@ class Matrix {
             }
         }
 
-        // Transform and copy data
+        flat_.reserve(rows * cols);
         for (size_t i = 0; i < rows; i++) {
-            std::vector<T> new_row;
             for (size_t j = 0; j < cols; j++) {
-                new_row.push_back(transform(source[i][j]));
+                flat_.push_back(transform(source[i][j]));
             }
-            data.push_back(new_row);
         }
     }
 
@@ -237,7 +236,7 @@ class Matrix {
         if (i >= rows || j >= cols) {
             throw std::out_of_range("Matrix index out of bounds");
         }
-        return data[i][j];
+        return flat_[i * cols + j];
     }
 
     /**
@@ -251,7 +250,7 @@ class Matrix {
         if (i >= rows || j >= cols) {
             throw std::out_of_range("Matrix index out of bounds");
         }
-        return data[i][j];
+        return flat_[i * cols + j];
     }
 
     /**
@@ -270,26 +269,21 @@ class Matrix {
     }
 
     /**
-     * Get underlying data as vector<vector<T>>
+     * Copy underlying entries as vector-of-rows (row-major).
      */
-    const std::vector<std::vector<T>>& get_data() const {
+    std::vector<std::vector<T>> get_data() const {
         if (is_unknown_scalar()) {
             throw std::invalid_argument(
                 "Unknown-size diagonal scalar matrix has no concrete data");
         }
-        return data;
-    }
-
-    /**
-     * Get mutable reference to underlying data
-     */
-    std::vector<std::vector<T>>& get_data_mut() {
-        if (is_unknown_scalar()) {
-            throw std::invalid_argument(
-                "Unknown-size diagonal scalar matrix has no mutable concrete "
-                "data");
+        std::vector<std::vector<T>> out;
+        out.reserve(rows);
+        for (size_t i = 0; i < rows; i++) {
+            out.emplace_back(flat_.begin() + static_cast<ptrdiff_t>(i * cols),
+                             flat_.begin() +
+                                 static_cast<ptrdiff_t>((i + 1) * cols));
         }
-        return data;
+        return out;
     }
 
     /**
@@ -305,14 +299,14 @@ class Matrix {
     /**
      * Transpose the matrix (returns new matrix)
      */
-    Matrix<T> transpose() const {
+    Matrix<T, InlineCap> transpose() const {
         if (is_unknown_scalar()) {
             return *this;
         }
-        Matrix<T> result(cols, rows);
+        Matrix<T, InlineCap> result(cols, rows);
         for (size_t i = 0; i < rows; i++) {
             for (size_t j = 0; j < cols; j++) {
-                result(j, i) = data[i][j];
+                result(j, i) = flat_[i * cols + j];
             }
         }
         return result;
@@ -334,7 +328,7 @@ class Matrix {
                 if (j > 0) {
                     result += ", ";
                 }
-                result += std::to_string(data[i][j]);
+                result += std::to_string(flat_[i * cols + j]);
             }
             result += "]\n";
         }
@@ -346,10 +340,10 @@ class Matrix {
      * Matrix addition: A + B
      * Requires: both matrices have same dimensions
      */
-    Matrix<T> operator+(const Matrix<T>& other) const {
+    Matrix<T, InlineCap> operator+(const Matrix<T, InlineCap>& other) const {
         if (is_unknown_scalar() && other.is_unknown_scalar()) {
-            return Matrix<T>(unknown_scalar_value() +
-                             other.unknown_scalar_value());
+            return Matrix<T, InlineCap>(unknown_scalar_value() +
+                                        other.unknown_scalar_value());
         }
         if (is_unknown_scalar()) {
             if (!other.is_square()) {
@@ -371,10 +365,11 @@ class Matrix {
             throw std::invalid_argument(
                 "Cannot add matrices with different dimensions");
         }
-        Matrix<T> result(rows, cols);
+        Matrix<T, InlineCap> result(rows, cols);
         for (size_t i = 0; i < rows; i++) {
             for (size_t j = 0; j < cols; j++) {
-                result(i, j) = data[i][j] + other.data[i][j];
+                const size_t idx = i * cols + j;
+                result(i, j) = flat_[idx] + other.flat_[idx];
             }
         }
         return result;
@@ -384,10 +379,10 @@ class Matrix {
      * Matrix subtraction: A - B
      * Requires: both matrices have same dimensions
      */
-    Matrix<T> operator-(const Matrix<T>& other) const {
+    Matrix<T, InlineCap> operator-(const Matrix<T, InlineCap>& other) const {
         if (is_unknown_scalar() && other.is_unknown_scalar()) {
-            return Matrix<T>(unknown_scalar_value() -
-                             other.unknown_scalar_value());
+            return Matrix<T, InlineCap>(unknown_scalar_value() -
+                                        other.unknown_scalar_value());
         }
         if (is_unknown_scalar()) {
             if (!other.is_square()) {
@@ -409,10 +404,11 @@ class Matrix {
             throw std::invalid_argument(
                 "Cannot subtract matrices with different dimensions");
         }
-        Matrix<T> result(rows, cols);
+        Matrix<T, InlineCap> result(rows, cols);
         for (size_t i = 0; i < rows; i++) {
             for (size_t j = 0; j < cols; j++) {
-                result(i, j) = data[i][j] - other.data[i][j];
+                const size_t idx = i * cols + j;
+                result(i, j) = flat_[idx] - other.flat_[idx];
             }
         }
         return result;
@@ -423,10 +419,10 @@ class Matrix {
      * Requires: cols of A == rows of B
      * Returns: (rows x other.cols) matrix
      */
-    Matrix<T> operator*(const Matrix<T>& other) const {
+    Matrix<T, InlineCap> operator*(const Matrix<T, InlineCap>& other) const {
         if (is_unknown_scalar() && other.is_unknown_scalar()) {
-            return Matrix<T>(unknown_scalar_value() *
-                             other.unknown_scalar_value());
+            return Matrix<T, InlineCap>(unknown_scalar_value() *
+                                        other.unknown_scalar_value());
         }
         if (is_unknown_scalar()) {
             return this->materialize_as_diag(other.rows) * other;
@@ -438,27 +434,25 @@ class Matrix {
             throw std::invalid_argument(
                 "Cannot multiply matrices: cols of A must equal rows of B");
         }
-        // Create result matrix with uninitialized storage, then fill it
-        std::vector<std::vector<T>> result_data;
+        Matrix<T, InlineCap> result(rows, other.cols);
         for (size_t i = 0; i < rows; i++) {
-            std::vector<T> new_row;
             for (size_t j = 0; j < other.cols; j++) {
-                T sum = data[i][0] * other.data[0][j];
+                T sum = flat_[i * cols + 0] * other.flat_[0 * other.cols + j];
                 for (size_t k = 1; k < cols; k++) {
-                    sum = sum + (data[i][k] * other.data[k][j]);
+                    sum = sum + (flat_[i * cols + k] *
+                                 other.flat_[k * other.cols + j]);
                 }
-                new_row.push_back(sum);
+                result(i, j) = sum;
             }
-            result_data.push_back(new_row);
         }
-        return Matrix<T>(result_data);
+        return result;
     }
 
     /**
      * Scalar multiplication: A * scalar
      * Delegates to scalar * A so scalar-left path is the single implementation.
      */
-    Matrix<T> operator*(const T& scalar) const {
+    Matrix<T, InlineCap> operator*(const T& scalar) const {
         return scalar * (*this);
     }
 
@@ -466,14 +460,15 @@ class Matrix {
      * Scalar multiplication (commutative): scalar * A
      * Friend function to allow scalar * matrix
      */
-    friend Matrix<T> operator*(const T& scalar, const Matrix<T>& matrix) {
+    friend Matrix<T, InlineCap> operator*(const T& scalar,
+                                          const Matrix<T, InlineCap>& matrix) {
         if (matrix.is_unknown_scalar()) {
-            return Matrix<T>(scalar * matrix.unknown_scalar_value());
+            return Matrix<T, InlineCap>(scalar * matrix.unknown_scalar_value());
         }
-        Matrix<T> result(matrix.rows, matrix.cols);
+        Matrix<T, InlineCap> result(matrix.rows, matrix.cols);
         for (size_t i = 0; i < matrix.rows; i++) {
             for (size_t j = 0; j < matrix.cols; j++) {
-                result(i, j) = scalar * matrix.data[i][j];
+                result(i, j) = scalar * matrix.flat_[i * matrix.cols + j];
             }
         }
         return result;
@@ -483,14 +478,14 @@ class Matrix {
      * Matrix division by scalar: A / scalar
      * Divides every element by the scalar
      */
-    Matrix<T> operator/(const T& scalar) const {
+    Matrix<T, InlineCap> operator/(const T& scalar) const {
         if (is_unknown_scalar()) {
-            return Matrix<T>(unknown_scalar_value() / scalar);
+            return Matrix<T, InlineCap>(unknown_scalar_value() / scalar);
         }
-        Matrix<T> result(rows, cols);
+        Matrix<T, InlineCap> result(rows, cols);
         for (size_t i = 0; i < rows; i++) {
             for (size_t j = 0; j < cols; j++) {
-                result(i, j) = data[i][j] / scalar;
+                result(i, j) = flat_[i * cols + j] / scalar;
             }
         }
         return result;
@@ -501,7 +496,7 @@ class Matrix {
      * Sentinel-sentinel compares diagonal scalar value.
      * Sentinel-concrete is always false.
      */
-    bool operator==(const Matrix<T>& other) const {
+    bool operator==(const Matrix<T, InlineCap>& other) const {
         if (is_unknown_scalar() && other.is_unknown_scalar()) {
             return unknown_scalar_value() == other.unknown_scalar_value();
         }
@@ -513,7 +508,8 @@ class Matrix {
         }
         for (size_t i = 0; i < rows; i++) {
             for (size_t j = 0; j < cols; j++) {
-                if (!(data[i][j] == other.data[i][j])) {
+                const size_t idx = i * cols + j;
+                if (!(flat_[idx] == other.flat_[idx])) {
                     return false;
                 }
             }
@@ -524,7 +520,7 @@ class Matrix {
     /**
      * Inequality operator
      */
-    bool operator!=(const Matrix<T>& other) const {
+    bool operator!=(const Matrix<T, InlineCap>& other) const {
         return !(*this == other);
     }
 
@@ -537,9 +533,9 @@ class Matrix {
             throw std::invalid_argument(
                 "Trace is only defined for square matrices");
         }
-        T result = data[0][0];
+        T result = flat_[0];
         for (size_t i = 1; i < rows; i++) {
-            result = result + data[i][i];
+            result = result + flat_[i * cols + i];
         }
         return result;
     }
@@ -558,6 +554,83 @@ class Matrix {
         std::vector<int> skip_rows(rows, 0);
         std::vector<int> skip_cols(cols, 0);
         return determinant_recursive(skip_rows, skip_cols);
+    }
+
+    /**
+     * Cofactor C(i,j) = (-1)^(i+j) * det(minor(i,j))
+     * Only needs +, -, * on T (ring operations). No division required.
+     */
+    T cofactor(size_t i, size_t j) const {
+        if (!is_square()) {
+            throw std::invalid_argument(
+                "Cofactor is only defined for square matrices");
+        }
+        if (rows < 2) {
+            throw std::invalid_argument(
+                "Cofactor requires matrix of size >= 2");
+        }
+        if (i >= rows || j >= cols) {
+            throw std::out_of_range("Cofactor index out of bounds");
+        }
+        std::vector<int> skip_rows(rows, 0);
+        std::vector<int> skip_cols(cols, 0);
+        skip_rows[i] = 1;
+        skip_cols[j] = 1;
+        T minor_det = determinant_recursive(skip_rows, skip_cols);
+        if ((i + j) % 2 == 1) {
+            return T() - minor_det;
+        }
+        return minor_det;
+    }
+
+    /**
+     * Classical adjugate (adjoint): transpose of the cofactor matrix.
+     * adj(A)_{ij} = C(j,i)
+     * Only needs +, -, * on T (ring operations). No division required.
+     *
+     * Key property: A * adj(A) = det(A) * I  (holds over any commutative ring)
+     */
+    Matrix<T, InlineCap> adjugate() const {
+        if (!is_square()) {
+            throw std::invalid_argument(
+                "Adjugate is only defined for square matrices");
+        }
+        if (rows < 2) {
+            throw std::invalid_argument(
+                "Adjugate requires matrix of size >= 2 "
+                "(use inverse() which handles 1x1 directly)");
+        }
+        Matrix<T, InlineCap> result(rows, cols);
+        for (size_t i = 0; i < rows; i++) {
+            for (size_t j = 0; j < cols; j++) {
+                result(i, j) = cofactor(j, i);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Matrix inverse via adjugate/determinant: A^{-1} = adj(A) / det(A)
+     *
+     * Requires T to support operator/ (i.e. T is a field or det is a unit).
+     * For ModularNumber with prime modulus: always works when det != 0.
+     * For integers: only correct when |det| = 1 (unimodular matrices).
+     * For composite modulus: throws if gcd(det, m) > 1.
+     *
+     * @throws std::invalid_argument if matrix is not square or det is zero
+     */
+    Matrix<T, InlineCap> inverse() const {
+        if (!is_square()) {
+            throw std::invalid_argument(
+                "Inverse is only defined for square matrices");
+        }
+        T det = determinant();
+        if (rows == 1) {
+            Matrix<T, InlineCap> result(1, 1);
+            result(0, 0) = det / det;
+            return result;
+        }
+        return adjugate() / det;
     }
 
    private:
@@ -586,7 +659,7 @@ class Matrix {
                 if (skip_rows[i] == 0) {
                     for (size_t j = 0; j < cols; j++) {
                         if (skip_cols[j] == 0) {
-                            return data[i][j];
+                            return flat_[i * cols + j];
                         }
                     }
                 }
@@ -608,10 +681,12 @@ class Matrix {
             }
 
             if (active_rows.size() == 2 && active_cols.size() == 2) {
-                return data[active_rows[0]][active_cols[0]] *
-                           data[active_rows[1]][active_cols[1]] -
-                       data[active_rows[0]][active_cols[1]] *
-                           data[active_rows[1]][active_cols[0]];
+                const size_t r0 = active_rows[0];
+                const size_t r1 = active_rows[1];
+                const size_t c0 = active_cols[0];
+                const size_t c1 = active_cols[1];
+                return flat_[r0 * cols + c0] * flat_[r1 * cols + c1] -
+                       flat_[r0 * cols + c1] * flat_[r1 * cols + c0];
             }
         }
 
@@ -644,7 +719,7 @@ class Matrix {
         skip_rows[expand_row] = 1;
         skip_cols[first_col] = 1;
         T cofactor = determinant_recursive(skip_rows, skip_cols);
-        det = det + (data[expand_row][first_col] * cofactor);
+        det = det + (flat_[expand_row * cols + first_col] * cofactor);
         skip_rows[expand_row] = 0;
         skip_cols[first_col] = 0;
 
@@ -659,7 +734,7 @@ class Matrix {
             skip_cols[j] = 1;
 
             T cofactor_j = determinant_recursive(skip_rows, skip_cols);
-            T term = data[expand_row][j] * cofactor_j;
+            T term = flat_[expand_row * cols + j] * cofactor_j;
 
             // Unmark for next iteration
             skip_rows[expand_row] = 0;
@@ -708,15 +783,13 @@ Matrix<T> to_matrix(const ContainerT& data, size_t m, size_t n) {
         throw std::invalid_argument("Container size must equal m * n");
     }
 
-    std::vector<std::vector<T>> mat_data;
+    Matrix<T> result(m, n);
     for (size_t i = 0; i < m; i++) {
-        std::vector<T> row;
         for (size_t j = 0; j < n; j++) {
-            row.push_back(data[i * n + j]);
+            result(i, j) = data[i * n + j];
         }
-        mat_data.push_back(row);
     }
-    return Matrix<T>(mat_data);
+    return result;
 }
 
 /**

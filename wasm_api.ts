@@ -210,6 +210,99 @@ export function wasm_get_gl_n_zm_size(n: number, m: number): number {
     return moduleInstance._wasm_get_gl_n_zm_size(n, m);
 }
 
+export interface WasmMatrixSet {
+    ptr: number;
+    count: number;
+    n: number;
+    modulus: number;
+    toFlatArray(): number[];
+    free(): void;
+}
+
+/**
+ * Generate all invertible n×n matrices over Z_m (the general linear group).
+ * Returns a handle whose .ptr lives on the WASM heap and can be passed
+ * directly to other WASM functions (zero copy).
+ * Call .free() when done to release WASM memory.
+ */
+export function wasm_get_gl_n_zm(n: number, m: number): WasmMatrixSet {
+    const HEAP32 = getHeap32();
+
+    const countSlot = 256;
+    const countPtr = countSlot * 4;
+
+    const bufPtr = moduleInstance!._wasm_get_gl_n_zm(n, m, countPtr);
+    const count = HEAP32[countSlot];
+
+    return {
+        ptr: bufPtr,
+        count,
+        n,
+        modulus: m,
+        toFlatArray(): number[] {
+            const H = getHeap32();
+            const startIdx = bufPtr / 4;
+            const total = count * n * n;
+            const result: number[] = [];
+            for (let i = 0; i < total; i++) {
+                result.push(H[startIdx + i]);
+            }
+            return result;
+        },
+        free(): void {
+            moduleInstance!._free(bufPtr);
+        },
+    };
+}
+
+/**
+ * Check whether a set of n×n matrices forms a group under multiplication.
+ *
+ * Accepts either:
+ *   - A WasmMatrixSet (zero-copy, pointer reuse)
+ *   - A flat JS array + count + n + modulus (copies to WASM heap)
+ */
+export function wasm_is_matrix_group(input: WasmMatrixSet): boolean;
+export function wasm_is_matrix_group(
+    data: readonly number[] | Int32Array,
+    count: number,
+    n: number,
+    modulus: number,
+): boolean;
+export function wasm_is_matrix_group(
+    dataOrSet: WasmMatrixSet | readonly number[] | Int32Array,
+    count?: number,
+    n?: number,
+    modulus?: number,
+): boolean {
+    if (typeof (dataOrSet as WasmMatrixSet).ptr === "number" &&
+        typeof (dataOrSet as WasmMatrixSet).count === "number") {
+        const set = dataOrSet as WasmMatrixSet;
+        return moduleInstance!._wasm_is_matrix_group(
+            set.ptr, set.count, set.n, set.modulus) === 1;
+    }
+
+    const data = dataOrSet as readonly number[] | Int32Array;
+    const HEAP32 = getHeap32();
+    const data32 = toInt32Array(data);
+
+    const totalSize = count! * n! * n!;
+    if (data32.length !== totalSize) {
+        throw new Error(
+            `Expected ${totalSize} elements (${count} matrices of ${n}×${n}), got ${data32.length}`);
+    }
+
+    const dataOffsetInInts = 1024;
+    if (HEAP32.length < dataOffsetInInts + totalSize) {
+        throw new Error("WASM memory exhausted");
+    }
+
+    copyToHeap(HEAP32, data32, dataOffsetInInts);
+    const dataPtr = dataOffsetInInts * 4;
+
+    return moduleInstance!._wasm_is_matrix_group(dataPtr, count!, n!, modulus!) === 1;
+}
+
 /**
  * Calculate the determinant of a square matrix.
  *
@@ -241,6 +334,49 @@ export function wasm_matrix_det(data: readonly number[] | Int32Array, n: number)
 
     // Call the WASM function
     return moduleInstance!._wasm_matrix_det(dataPtr, n);
+}
+
+/**
+ * Compute the inverse of an n×n matrix over Z_m (modular arithmetic).
+ * Uses the adjugate/determinant method in C++.
+ * Requires m to be prime and det(A) != 0 mod m.
+ *
+ * @param data Row-major n×n matrix entries (integers in [0, m))
+ * @param n    Matrix dimension
+ * @param m    Prime modulus
+ * @return     Row-major n×n inverse matrix entries
+ */
+export function wasm_matrix_inverse_mod(
+    data: readonly number[] | Int32Array,
+    n: number,
+    m: number,
+): number[] {
+    const HEAP32 = getHeap32();
+    const data32 = toInt32Array(data);
+
+    const totalSize = n * n;
+    if (data32.length !== totalSize) {
+        throw new Error(`Expected ${totalSize} elements for a ${n}×${n} matrix, got ${data32.length}`);
+    }
+
+    const dataOffsetInInts = 1024;
+    const outOffsetInInts = dataOffsetInInts + totalSize;
+    if (HEAP32.length < outOffsetInInts + totalSize) {
+        throw new Error("WASM memory exhausted");
+    }
+
+    copyToHeap(HEAP32, data32, dataOffsetInInts);
+
+    const dataPtr = dataOffsetInInts * 4;
+    const outPtr = outOffsetInInts * 4;
+
+    moduleInstance!._wasm_matrix_inverse_mod(dataPtr, n, m, outPtr);
+
+    const result: number[] = [];
+    for (let i = 0; i < totalSize; i++) {
+        result.push(HEAP32[outOffsetInInts + i]);
+    }
+    return result;
 }
 
 // --- Game of Life (C++ WASM) ---

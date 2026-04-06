@@ -34,6 +34,31 @@ static void fill_matrices_recursive(
 }
 
 /**
+ * Count invertible matrices without storing them.
+ */
+static size_t count_matrices_recursive(
+    std::vector<std::vector<ModularNumber>>& current_data,
+    size_t n,
+    size_t m,
+    size_t position) {
+    if (position == n * n) {
+        Matrix mat(current_data);
+        ModularNumber det = mat.determinant();
+        return det.get_value() != 0 ? 1 : 0;
+    }
+
+    size_t row = position / n;
+    size_t col = position % n;
+
+    size_t count = 0;
+    for (long long val = 0; val < static_cast<long long>(m); val++) {
+        current_data[row][col] = ModularNumber(val, m);
+        count += count_matrices_recursive(current_data, n, m, position + 1);
+    }
+    return count;
+}
+
+/**
  * Generate all possible n×n matrices with elements in Z_m
  */
 std::vector<Matrix<ModularNumber>> generate_all_matrices(size_t n, size_t m) {
@@ -78,10 +103,12 @@ size_t get_gl_n_zm_size(size_t n, size_t m) {
         throw std::invalid_argument("Matrix size and modulus must be positive");
     }
 
-    // Generate all matrices and return their count
-    std::vector<Matrix<ModularNumber>> gl_matrices =
-        generate_all_matrices(n, m);
-    std::cout << "Generated " << gl_matrices.size()
-              << " invertible matrices in GL(" << n << ", " << m << ")\n";
-    return gl_matrices.size();
+    ModularNumber default_value(0, m);
+    std::vector<std::vector<ModularNumber>> current_data(
+        n, std::vector<ModularNumber>(n, default_value));
+
+    size_t count = count_matrices_recursive(current_data, n, m, 0);
+    std::cout << "Generated " << count << " invertible matrices in GL(" << n
+              << ", " << m << ")\n";
+    return count;
 }

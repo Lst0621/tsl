@@ -40,7 +40,7 @@ export function is_closure(generators, multiply, eq) {
     let limit = generators.length + 1;
     // no need to generate the whole semigroup, just check if it is already closed
     let closure = generate_semigroup(generators, multiply, eq, limit);
-    return closure.length == closure.length;
+    return closure.length == generators.length;
 }
 export function is_associative(elements, multiply, eq) {
     for (let [a, b] of cartesian_product([elements, elements])) {
