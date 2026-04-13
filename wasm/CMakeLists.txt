@@ -17,6 +17,10 @@ set(TSL_CORE_HEADERS
         src/bars_game.h
         src/comb.h
         src/game_of_life.h
+        src/graph/graph.h
+        src/graph/graph_distances.h
+        src/graph/graph_generators.h
+        src/graph/metric_dimension.h
         src/helper.h
         src/lang_string.h
         src/modular_number.h
@@ -99,6 +103,10 @@ if(NOT CMAKE_C_COMPILER MATCHES "emcc")
                 gtest/rational_function_test_gtest.cpp
                 gtest/complex_test_gtest.cpp
                 gtest/complex_qi_test_gtest.cpp
+                gtest/graph_distances_test_gtest.cpp
+                gtest/graph_generators_test_gtest.cpp
+                gtest/graph_metric_dimension_test_gtest.cpp
+                gtest/graph_test_gtest.cpp
                 gtest/matrix_test_gtest.cpp
         )
 

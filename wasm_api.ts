@@ -61,6 +61,18 @@ function toInt32Array(input: readonly number[] | Int32Array): Int32Array {
     return input instanceof Int32Array ? input : new Int32Array(input);
 }
 
+function requireModuleFunctions<K extends string>(...names: K[]): void {
+    if (!moduleInstance) {
+        throw new Error("WASM module not initialized.");
+    }
+    const m = moduleInstance as any;
+    for (const name of names) {
+        if (typeof m[name] !== "function") {
+            throw new Error(`WASM function not available: ${name}`);
+        }
+    }
+}
+
 /**
  * Helper: Copy array data into HEAP32 at given offset
  */
@@ -794,4 +806,111 @@ export function wasmMatrixAdd(dataA: number[], dataB: number[], n: number): numb
     const out: number[] = [];
     for (let i = 0; i < size; i++) out.push(HEAP32[baseOut + i]);
     return out;
+}
+
+// --- Graph demo (adjacency-matrix input) ---
+
+export function wasmGraphEdgeCount(adj01: readonly number[] | Int32Array, n: number, directed: boolean): number {
+    requireModuleFunctions("_wasm_graph_edge_count", "_malloc", "_free");
+    const m = moduleInstance as any;
+    const HEAP32 = getHeap32();
+    const a32 = toInt32Array(adj01);
+    const needed = n * n;
+    if (a32.length !== needed) {
+        throw new Error(`wasmGraphEdgeCount: expected ${needed} entries for ${n}×${n} adjacency, got ${a32.length}`);
+    }
+    const bytes = needed * 4;
+    const ptr = m._malloc(bytes);
+    if (ptr === 0) {
+        throw new Error("wasmGraphEdgeCount: malloc failed");
+    }
+    try {
+        const base = ptr / 4;
+        copyToHeap(HEAP32, a32, base);
+        return m._wasm_graph_edge_count(n, directed ? 1 : 0, ptr);
+    } finally {
+        m._free(ptr);
+    }
+}
+
+export function wasmGraphAllPairsDistances(adj01: readonly number[] | Int32Array, n: number, directed: boolean): number[] {
+    requireModuleFunctions("_wasm_graph_all_pairs_bfs_distances", "_malloc", "_free");
+    const m = moduleInstance as any;
+    const HEAP32 = getHeap32();
+    const a32 = toInt32Array(adj01);
+    const needed = n * n;
+    if (a32.length !== needed) {
+        throw new Error(`wasmGraphAllPairsDistances: expected ${needed} entries for ${n}×${n} adjacency, got ${a32.length}`);
+    }
+    const bytesAdj = needed * 4;
+    const bytesOut = needed * 4;
+    const adjPtr = m._malloc(bytesAdj);
+    const outPtr = m._malloc(bytesOut);
+    if (adjPtr === 0 || outPtr === 0) {
+        if (adjPtr) {
+            m._free(adjPtr);
+        }
+        if (outPtr) {
+            m._free(outPtr);
+        }
+        throw new Error("wasmGraphAllPairsDistances: malloc failed");
+    }
+    try {
+        copyToHeap(HEAP32, a32, adjPtr / 4);
+        m._wasm_graph_all_pairs_bfs_distances(n, directed ? 1 : 0, adjPtr, outPtr);
+        const out: number[] = [];
+        const base = outPtr / 4;
+        for (let i = 0; i < needed; i++) {
+            out.push(HEAP32[base + i]);
+        }
+        return out;
+    } finally {
+        m._free(adjPtr);
+        m._free(outPtr);
+    }
+}
+
+export function wasmGraphMetricDimension(adj01: readonly number[] | Int32Array, n: number): { dimension: number; basis: number[] } {
+    requireModuleFunctions("_wasm_graph_metric_dimension", "_malloc", "_free");
+    const m = moduleInstance as any;
+    const HEAP32 = getHeap32();
+    const a32 = toInt32Array(adj01);
+    const needed = n * n;
+    if (a32.length !== needed) {
+        throw new Error(`wasmGraphMetricDimension: expected ${needed} entries for ${n}×${n} adjacency, got ${a32.length}`);
+    }
+    const bytesAdj = needed * 4;
+    const bytesDim = 4;
+    const bytesBasis = n * 4;
+    const adjPtr = m._malloc(bytesAdj);
+    const dimPtr = m._malloc(bytesDim);
+    const basisPtr = m._malloc(bytesBasis);
+    if (adjPtr === 0 || dimPtr === 0 || basisPtr === 0) {
+        if (adjPtr) {
+            m._free(adjPtr);
+        }
+        if (dimPtr) {
+            m._free(dimPtr);
+        }
+        if (basisPtr) {
+            m._free(basisPtr);
+        }
+        throw new Error("wasmGraphMetricDimension: malloc failed");
+    }
+    try {
+        copyToHeap(HEAP32, a32, adjPtr / 4);
+        // basis_max = n is enough for all cases.
+        m._wasm_graph_metric_dimension(n, adjPtr, dimPtr, basisPtr, n);
+        const dim = HEAP32[dimPtr / 4];
+        const basis: number[] = [];
+        const base = basisPtr / 4;
+        for (let i = 0; i < dim; i++) {
+            basis.push(HEAP32[base + i]);
+        }
+        return { dimension: dim, basis };
+    } finally {
+        m._free(adjPtr);
+        m._free(dimPtr);
+        m._free(basisPtr);
+    }
 }

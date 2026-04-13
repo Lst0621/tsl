@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <numeric>
+#include <queue>
 #include <vector>
 
 #include "bars_game.h"
@@ -13,6 +14,35 @@
 #include "linear_recurrence.h"
 #include "matrix.h"
 #include "semigroup.h"
+#include "graph/graph.h"
+#include "graph/metric_dimension.h"
+
+namespace {
+
+inline bool adj01_has_edge_directed(const int* adj01, int n, int from, int to) {
+    return adj01[from * n + to] != 0;
+}
+
+inline bool adj01_has_edge_undirected_or(const int* adj01, int n, int a, int b) {
+    return adj01[a * n + b] != 0 || adj01[b * n + a] != 0;
+}
+
+inline Graph<int> build_undirected_graph_from_adj01_or(const int* adj01, int n) {
+    Graph<int> g(false);
+    for (int i = 0; i < n; i++) {
+        g.add_vertex(i);
+    }
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (adj01_has_edge_undirected_or(adj01, n, i, j)) {
+                g.add_edge(i, j);
+            }
+        }
+    }
+    return g;
+}
+
+}  // namespace
 
 extern "C" {
 
@@ -465,5 +495,125 @@ int bars_game_min_val(void* handle) {
 EMSCRIPTEN_KEEPALIVE
 int bars_game_max_val(void* handle) {
     return static_cast<BarsGame*>(handle)->max_val();
+}
+
+// --- Graph demo helpers (adjacency-matrix input) ---
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_graph_edge_count(int n, int directed, const int* adj01) {
+    if (n < 0) {
+        return 0;
+    }
+    if (!adj01) {
+        return 0;
+    }
+
+    int count = 0;
+    if (directed != 0) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (i == j) {
+                    continue;
+                }
+                if (adj01_has_edge_directed(adj01, n, i, j)) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (adj01_has_edge_undirected_or(adj01, n, i, j)) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_graph_all_pairs_bfs_distances(int n, int directed, const int* adj01,
+                                       int* out_dist) {
+    if (n <= 0) {
+        return;
+    }
+    if (!adj01 || !out_dist) {
+        return;
+    }
+
+    std::vector<int> dist(static_cast<std::size_t>(n), -1);
+    std::queue<int> q;
+
+    for (int s = 0; s < n; s++) {
+        for (int i = 0; i < n; i++) {
+            dist[static_cast<std::size_t>(i)] = -1;
+        }
+        while (!q.empty()) {
+            q.pop();
+        }
+
+        dist[static_cast<std::size_t>(s)] = 0;
+        q.push(s);
+
+        while (!q.empty()) {
+            const int u = q.front();
+            q.pop();
+            const int du = dist[static_cast<std::size_t>(u)];
+
+            for (int v = 0; v < n; v++) {
+                if (u == v) {
+                    continue;
+                }
+                bool has = false;
+                if (directed != 0) {
+                    has = adj01_has_edge_directed(adj01, n, u, v);
+                } else {
+                    has = adj01_has_edge_undirected_or(adj01, n, u, v);
+                }
+                if (!has) {
+                    continue;
+                }
+                if (dist[static_cast<std::size_t>(v)] != -1) {
+                    continue;
+                }
+                dist[static_cast<std::size_t>(v)] = du + 1;
+                q.push(v);
+            }
+        }
+
+        for (int t = 0; t < n; t++) {
+            out_dist[s * n + t] = dist[static_cast<std::size_t>(t)];
+        }
+    }
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_graph_metric_dimension(int n, const int* adj01, int* out_dim,
+                                int* out_basis, int basis_max) {
+    if (n < 0) {
+        return 0;
+    }
+    if (!adj01 || !out_dim) {
+        return 0;
+    }
+    if (basis_max < 0) {
+        return 0;
+    }
+
+    Graph<int> g = build_undirected_graph_from_adj01_or(adj01, n);
+    MetricDimensionResult md = metric_dimension_brute_force(g);
+    *out_dim = md.dimension;
+
+    if (out_basis) {
+        const int write_n =
+            md.dimension < basis_max ? md.dimension : basis_max;
+        for (int i = 0; i < write_n; i++) {
+            out_basis[i] = md.basis[static_cast<std::size_t>(i)];
+        }
+    }
+
+    return md.dimension;
 }
 }
