@@ -1,4 +1,4 @@
-import wasmSample from "./wasm/wasm_out_v1/wasm_sample";
+import wasmSample from "./wasm/wasm_out_v1/wasm_sample.js";
 import type {WasmSampleModule} from "./wasm/wasm_out_v1/wasm_sample";
 
 let moduleInstance: WasmSampleModule | null = null;
@@ -833,6 +833,55 @@ export function wasmGraphEdgeCount(adj01: readonly number[] | Int32Array, n: num
     }
 }
 
+export function wasmGraphRandomizeUndirectedAdj01(
+    n: number,
+    seed: number,
+): { adj01: number[]; edgeCount: number; threshold: number } {
+    requireModuleFunctions("_wasm_graph_randomize_undirected_adj01", "_malloc", "_free");
+    const m = moduleInstance as any;
+    const HEAP32 = getHeap32();
+    const needed = n * n;
+    const bytesAdj = needed * 4;
+    const bytesEdgeCount = 4;
+    const bytesThresholdMilli = 4;
+    const adjPtr = m._malloc(bytesAdj);
+    const edgeCountPtr = m._malloc(bytesEdgeCount);
+    const thresholdMilliPtr = m._malloc(bytesThresholdMilli);
+    if (adjPtr === 0 || edgeCountPtr === 0 || thresholdMilliPtr === 0) {
+        if (adjPtr) {
+            m._free(adjPtr);
+        }
+        if (edgeCountPtr) {
+            m._free(edgeCountPtr);
+        }
+        if (thresholdMilliPtr) {
+            m._free(thresholdMilliPtr);
+        }
+        throw new Error("wasmGraphRandomizeUndirectedAdj01: malloc failed");
+    }
+    try {
+        m._wasm_graph_randomize_undirected_adj01(
+            n,
+            (seed >>> 0),
+            adjPtr,
+            edgeCountPtr,
+            thresholdMilliPtr,
+        );
+        const out: number[] = [];
+        const base = adjPtr / 4;
+        for (let i = 0; i < needed; i++) {
+            out.push(HEAP32[base + i]);
+        }
+        const edgeCount = HEAP32[edgeCountPtr / 4];
+        const thresholdMilli = HEAP32[thresholdMilliPtr / 4];
+        return { adj01: out, edgeCount, threshold: thresholdMilli / 1000.0 };
+    } finally {
+        m._free(adjPtr);
+        m._free(edgeCountPtr);
+        m._free(thresholdMilliPtr);
+    }
+}
+
 export function wasmGraphAllPairsDistances(adj01: readonly number[] | Int32Array, n: number, directed: boolean): number[] {
     requireModuleFunctions("_wasm_graph_all_pairs_bfs_distances", "_malloc", "_free");
     const m = moduleInstance as any;
@@ -913,4 +962,858 @@ export function wasmGraphMetricDimension(adj01: readonly number[] | Int32Array, 
         m._free(dimPtr);
         m._free(basisPtr);
     }
+}
+
+export type GraphResolveMode = 0 | 1 | 2; // 0=Nodes, 1=Edges, 2=NodesAndEdges (strict union)
+const GRAPH_RESOLVE_LIST_MAX_INTS_PER_MODE = 100_000;
+
+function nCk(n: number, k: number): number {
+    if (k < 0 || k > n) {
+        return 0;
+    }
+    if (k === 0 || k === n) {
+        return 1;
+    }
+    let kk = k;
+    if (kk > n - kk) {
+        kk = n - kk;
+    }
+    let num = 1;
+    let den = 1;
+    for (let i = 1; i <= kk; i++) {
+        num *= (n - (kk - i));
+        den *= i;
+    }
+    return Math.floor(num / den);
+}
+
+function maxSubsetListInts(n: number, maxK: number): number {
+    let total = 0;
+    for (let k = 1; k <= maxK; k++) {
+        const count = nCk(n, k);
+        total += count * (1 + k);
+    }
+    return total;
+}
+
+function clampListMaxKForCapacity(
+    n: number,
+    requestedListMaxK: number,
+    maxIntsPerMode: number,
+): { effectiveListMaxK: number; listFlatMaxInts: number; rangeLimited: boolean } {
+    let effectiveListMaxK = requestedListMaxK;
+    if (effectiveListMaxK < 0) {
+        effectiveListMaxK = n;
+    }
+    if (effectiveListMaxK > n) {
+        effectiveListMaxK = n;
+    }
+
+    let rangeLimited = false;
+    let listFlatMaxInts = maxSubsetListInts(n, effectiveListMaxK);
+    if (!Number.isFinite(listFlatMaxInts) || listFlatMaxInts > maxIntsPerMode) {
+        rangeLimited = true;
+        while (effectiveListMaxK > 0) {
+            const candidate = maxSubsetListInts(n, effectiveListMaxK);
+            if (Number.isFinite(candidate) && candidate <= maxIntsPerMode) {
+                listFlatMaxInts = candidate;
+                break;
+            }
+            effectiveListMaxK--;
+        }
+        if (effectiveListMaxK === 0) {
+            listFlatMaxInts = 0;
+        }
+    }
+    return { effectiveListMaxK, listFlatMaxInts, rangeLimited };
+}
+
+function wasmGraphResolvingSubsetsFromDistInternal(
+    wasmFunctionName:
+        "_wasm_graph_resolving_subsets_from_dist"
+        | "_wasm_graph_resolving_subsets_with_non_resolving_size_minus_one_from_dist",
+    adj01: readonly number[] | Int32Array,
+    distFlat: readonly number[] | Int32Array,
+    n: number,
+    mode: GraphResolveMode,
+    listMaxK: number = 3,
+): { minDimension: number; smallestBasis: number[]; subsets: number[][]; truncated: boolean } {
+    requireModuleFunctions(wasmFunctionName, "_malloc", "_free");
+    const m = moduleInstance as any;
+    const HEAP32 = getHeap32();
+    const a32 = toInt32Array(adj01);
+    const d32 = toInt32Array(distFlat);
+    const needed = n * n;
+    if (a32.length !== needed) {
+        throw new Error(`wasmGraphResolvingSubsetsFromDist: expected ${needed} entries for ${n}×${n} adjacency, got ${a32.length}`);
+    }
+    if (d32.length !== needed) {
+        throw new Error(`wasmGraphResolvingSubsetsFromDist: expected ${needed} entries for ${n}×${n} distances, got ${d32.length}`);
+    }
+    const clamped = clampListMaxKForCapacity(
+        n,
+        listMaxK,
+        GRAPH_RESOLVE_LIST_MAX_INTS_PER_MODE,
+    );
+    listMaxK = clamped.effectiveListMaxK;
+
+    const bytesAdj = needed * 4;
+    const bytesDist = needed * 4;
+    const bytesMinDim = 4;
+    const bytesSmallest = n * 4;
+    const bytesCount = 4;
+    const bytesUsed = 4;
+    const bytesTrunc = 4;
+    const listFlatMaxInts = clamped.listFlatMaxInts;
+    const listFlatIntsForAlloc = listFlatMaxInts > 0 ? listFlatMaxInts : 1;
+    const bytesListFlat = listFlatIntsForAlloc * 4;
+
+    const adjPtr = m._malloc(bytesAdj);
+    const distPtr = m._malloc(bytesDist);
+    const minDimPtr = m._malloc(bytesMinDim);
+    const smallestPtr = m._malloc(bytesSmallest);
+    const countPtr = m._malloc(bytesCount);
+    const usedPtr = m._malloc(bytesUsed);
+    const truncPtr = m._malloc(bytesTrunc);
+    const listFlatPtr = m._malloc(bytesListFlat);
+
+    if (adjPtr === 0 || distPtr === 0 || minDimPtr === 0 || smallestPtr === 0 ||
+        countPtr === 0 || usedPtr === 0 || truncPtr === 0 || listFlatPtr === 0) {
+        if (adjPtr) { m._free(adjPtr); }
+        if (distPtr) { m._free(distPtr); }
+        if (minDimPtr) { m._free(minDimPtr); }
+        if (smallestPtr) { m._free(smallestPtr); }
+        if (countPtr) { m._free(countPtr); }
+        if (usedPtr) { m._free(usedPtr); }
+        if (truncPtr) { m._free(truncPtr); }
+        if (listFlatPtr) { m._free(listFlatPtr); }
+        throw new Error("wasmGraphResolvingSubsetsFromDist: malloc failed");
+    }
+
+    try {
+        copyToHeap(HEAP32, a32, adjPtr / 4);
+        copyToHeap(HEAP32, d32, distPtr / 4);
+
+        const ok = m[wasmFunctionName](
+            n,
+            adjPtr,
+            distPtr,
+            mode,
+            listMaxK,
+            minDimPtr,
+            smallestPtr,
+            n,
+            countPtr,
+            usedPtr,
+            listFlatPtr,
+            listFlatMaxInts,
+            truncPtr,
+        );
+        if (ok === 0) {
+            throw new Error("wasmGraphResolvingSubsetsFromDist: wasm call failed");
+        }
+
+        const minDim = HEAP32[minDimPtr / 4];
+        const smallestBasis: number[] = [];
+        const smallestBase = smallestPtr / 4;
+        for (let i = 0; i < minDim; i++) {
+            smallestBasis.push(HEAP32[smallestBase + i]);
+        }
+
+        const usedInts = HEAP32[usedPtr / 4];
+        const truncated = HEAP32[truncPtr / 4] !== 0 || clamped.rangeLimited;
+        const subsets: number[][] = [];
+        const flatBase = listFlatPtr / 4;
+        let idx = 0;
+        while (idx < usedInts) {
+            const k = HEAP32[flatBase + idx];
+            idx++;
+            const subset: number[] = [];
+            for (let i = 0; i < k; i++) {
+                subset.push(HEAP32[flatBase + idx]);
+                idx++;
+            }
+            subsets.push(subset);
+        }
+
+        return { minDimension: minDim, smallestBasis, subsets, truncated };
+    } finally {
+        m._free(adjPtr);
+        m._free(distPtr);
+        m._free(minDimPtr);
+        m._free(smallestPtr);
+        m._free(countPtr);
+        m._free(usedPtr);
+        m._free(truncPtr);
+        m._free(listFlatPtr);
+    }
+}
+
+export function wasmGraphResolvingSubsetsFromDist(
+    adj01: readonly number[] | Int32Array,
+    distFlat: readonly number[] | Int32Array,
+    n: number,
+    mode: GraphResolveMode,
+    listMaxK: number = 3,
+): { minDimension: number; smallestBasis: number[]; subsets: number[][]; truncated: boolean } {
+    return wasmGraphResolvingSubsetsFromDistInternal(
+        "_wasm_graph_resolving_subsets_from_dist",
+        adj01,
+        distFlat,
+        n,
+        mode,
+        listMaxK,
+    );
+}
+
+export function wasmGraphResolvingSubsetsWithNonResolvingSizeMinusOneFromDist(
+    adj01: readonly number[] | Int32Array,
+    distFlat: readonly number[] | Int32Array,
+    n: number,
+    mode: GraphResolveMode,
+    listMaxK: number = 3,
+): { minDimension: number; smallestBasis: number[]; subsets: number[][]; truncated: boolean } {
+    return wasmGraphResolvingSubsetsFromDistInternal(
+        "_wasm_graph_resolving_subsets_with_non_resolving_size_minus_one_from_dist",
+        adj01,
+        distFlat,
+        n,
+        mode,
+        listMaxK,
+    );
+}
+
+export function wasmGraphResolvingSubsetsAllModesWithNonResolvingSizeMinusOneFromDist(
+    adj01: readonly number[] | Int32Array,
+    distFlat: readonly number[] | Int32Array,
+    n: number,
+    listMaxK: number = 3,
+): {
+    node: { minDimension: number; smallestBasis: number[]; subsets: number[][]; truncated: boolean };
+    edge: { minDimension: number; smallestBasis: number[]; subsets: number[][]; truncated: boolean };
+    mixed: { minDimension: number; smallestBasis: number[]; subsets: number[][]; truncated: boolean };
+} {
+    requireModuleFunctions(
+        "_wasm_graph_resolving_subsets_all_modes_with_non_resolving_size_minus_one_from_dist",
+        "_malloc",
+        "_free",
+    );
+    const m = moduleInstance as any;
+    const HEAP32 = getHeap32();
+    const a32 = toInt32Array(adj01);
+    const d32 = toInt32Array(distFlat);
+    const needed = n * n;
+    if (a32.length !== needed) {
+        throw new Error(`wasmGraphResolvingSubsetsAllModesWithNonResolvingSizeMinusOneFromDist: expected ${needed} entries for ${n}×${n} adjacency, got ${a32.length}`);
+    }
+    if (d32.length !== needed) {
+        throw new Error(`wasmGraphResolvingSubsetsAllModesWithNonResolvingSizeMinusOneFromDist: expected ${needed} entries for ${n}×${n} distances, got ${d32.length}`);
+    }
+    const clamped = clampListMaxKForCapacity(
+        n,
+        listMaxK,
+        GRAPH_RESOLVE_LIST_MAX_INTS_PER_MODE,
+    );
+    listMaxK = clamped.effectiveListMaxK;
+
+    const modeCount = 3;
+    const bytesAdj = needed * 4;
+    const bytesDist = needed * 4;
+    const bytesMinDim3 = modeCount * 4;
+    const bytesSmallest3 = modeCount * n * 4;
+    const bytesCount3 = modeCount * 4;
+    const bytesUsed3 = modeCount * 4;
+    const bytesTrunc3 = modeCount * 4;
+    const listFlatMaxIntsPerMode = clamped.listFlatMaxInts;
+    const listFlatIntsForAllocPerMode =
+        listFlatMaxIntsPerMode > 0 ? listFlatMaxIntsPerMode : 1;
+    const bytesListFlat3 = modeCount * listFlatIntsForAllocPerMode * 4;
+
+    const adjPtr = m._malloc(bytesAdj);
+    const distPtr = m._malloc(bytesDist);
+    const minDim3Ptr = m._malloc(bytesMinDim3);
+    const smallest3Ptr = m._malloc(bytesSmallest3);
+    const count3Ptr = m._malloc(bytesCount3);
+    const used3Ptr = m._malloc(bytesUsed3);
+    const trunc3Ptr = m._malloc(bytesTrunc3);
+    const listFlat3Ptr = m._malloc(bytesListFlat3);
+    if (adjPtr === 0 || distPtr === 0 || minDim3Ptr === 0 || smallest3Ptr === 0 ||
+        count3Ptr === 0 || used3Ptr === 0 || trunc3Ptr === 0 || listFlat3Ptr === 0) {
+        if (adjPtr) {
+            m._free(adjPtr);
+        }
+        if (distPtr) {
+            m._free(distPtr);
+        }
+        if (minDim3Ptr) {
+            m._free(minDim3Ptr);
+        }
+        if (smallest3Ptr) {
+            m._free(smallest3Ptr);
+        }
+        if (count3Ptr) {
+            m._free(count3Ptr);
+        }
+        if (used3Ptr) {
+            m._free(used3Ptr);
+        }
+        if (trunc3Ptr) {
+            m._free(trunc3Ptr);
+        }
+        if (listFlat3Ptr) {
+            m._free(listFlat3Ptr);
+        }
+        throw new Error("wasmGraphResolvingSubsetsAllModesWithNonResolvingSizeMinusOneFromDist: malloc failed");
+    }
+
+    try {
+        copyToHeap(HEAP32, a32, adjPtr / 4);
+        copyToHeap(HEAP32, d32, distPtr / 4);
+        const ok = m._wasm_graph_resolving_subsets_all_modes_with_non_resolving_size_minus_one_from_dist(
+            n,
+            adjPtr,
+            distPtr,
+            listMaxK,
+            minDim3Ptr,
+            smallest3Ptr,
+            n,
+            count3Ptr,
+            used3Ptr,
+            listFlat3Ptr,
+            listFlatMaxIntsPerMode,
+            trunc3Ptr,
+        );
+        if (ok === 0) {
+            throw new Error("wasmGraphResolvingSubsetsAllModesWithNonResolvingSizeMinusOneFromDist: wasm call failed");
+        }
+
+        const parseModeResult = (modeIdx: number): { minDimension: number; smallestBasis: number[]; subsets: number[][]; truncated: boolean } => {
+            const minDim = HEAP32[minDim3Ptr / 4 + modeIdx];
+            const smallestBasis: number[] = [];
+            const smallestBase = smallest3Ptr / 4 + modeIdx * n;
+            for (let i = 0; i < minDim; i++) {
+                smallestBasis.push(HEAP32[smallestBase + i]);
+            }
+            const usedInts = HEAP32[used3Ptr / 4 + modeIdx];
+            const truncated =
+                HEAP32[trunc3Ptr / 4 + modeIdx] !== 0 || clamped.rangeLimited;
+            const subsets: number[][] = [];
+            const flatBase = listFlat3Ptr / 4 + modeIdx * listFlatMaxIntsPerMode;
+            let idx = 0;
+            while (idx < usedInts) {
+                const k = HEAP32[flatBase + idx];
+                idx++;
+                const subset: number[] = [];
+                for (let i = 0; i < k; i++) {
+                    subset.push(HEAP32[flatBase + idx]);
+                    idx++;
+                }
+                subsets.push(subset);
+            }
+            return { minDimension: minDim, smallestBasis, subsets, truncated };
+        };
+
+        return {
+            node: parseModeResult(0),
+            edge: parseModeResult(1),
+            mixed: parseModeResult(2),
+        };
+    } finally {
+        m._free(adjPtr);
+        m._free(distPtr);
+        m._free(minDim3Ptr);
+        m._free(smallest3Ptr);
+        m._free(count3Ptr);
+        m._free(used3Ptr);
+        m._free(trunc3Ptr);
+        m._free(listFlat3Ptr);
+    }
+}
+
+export function wasmGraphResolvingSubsetsAllModesPaginatedWithNonResolvingSizeMinusOneFromDist(
+    adj01: readonly number[] | Int32Array,
+    distFlat: readonly number[] | Int32Array,
+    n: number,
+    pageSize: number,
+    pageIndexByMode: readonly [number, number, number],
+): {
+    node: { minDimension: number; smallestBasis: number[]; totalCount: number; pageCount: number; subsets: number[][]; truncated: boolean };
+    edge: { minDimension: number; smallestBasis: number[]; totalCount: number; pageCount: number; subsets: number[][]; truncated: boolean };
+    mixed: { minDimension: number; smallestBasis: number[]; totalCount: number; pageCount: number; subsets: number[][]; truncated: boolean };
+} {
+    requireModuleFunctions(
+        "_wasm_graph_resolving_subsets_all_modes_paginated_with_non_resolving_size_minus_one_from_dist",
+        "_malloc",
+        "_free",
+    );
+    const m = moduleInstance as any;
+    const HEAP32 = getHeap32();
+    const a32 = toInt32Array(adj01);
+    const d32 = toInt32Array(distFlat);
+    const needed = n * n;
+    if (a32.length !== needed) {
+        throw new Error(`wasmGraphResolvingSubsetsAllModesPaginatedWithNonResolvingSizeMinusOneFromDist: expected ${needed} entries for ${n}×${n} adjacency, got ${a32.length}`);
+    }
+    if (d32.length !== needed) {
+        throw new Error(`wasmGraphResolvingSubsetsAllModesPaginatedWithNonResolvingSizeMinusOneFromDist: expected ${needed} entries for ${n}×${n} distances, got ${d32.length}`);
+    }
+    if (pageSize < 0) {
+        pageSize = 0;
+    }
+
+    const modeCount = 3;
+    const bytesAdj = needed * 4;
+    const bytesDist = needed * 4;
+    const bytesPageIndex3 = modeCount * 4;
+    const bytesMinDim3 = modeCount * 4;
+    const bytesSmallest3 = modeCount * n * 4;
+    const bytesTotalCount3 = modeCount * 4;
+    const bytesPageCount3 = modeCount * 4;
+    const bytesPageListCount3 = modeCount * 4;
+    const bytesPageUsed3 = modeCount * 4;
+    const bytesPageTrunc3 = modeCount * 4;
+    const pageListFlatMaxIntsPerMode = Math.max(1, pageSize * (n + 1));
+    const bytesPageFlat3 = modeCount * pageListFlatMaxIntsPerMode * 4;
+
+    const adjPtr = m._malloc(bytesAdj);
+    const distPtr = m._malloc(bytesDist);
+    const pageIndex3Ptr = m._malloc(bytesPageIndex3);
+    const minDim3Ptr = m._malloc(bytesMinDim3);
+    const smallest3Ptr = m._malloc(bytesSmallest3);
+    const totalCount3Ptr = m._malloc(bytesTotalCount3);
+    const pageCount3Ptr = m._malloc(bytesPageCount3);
+    const pageListCount3Ptr = m._malloc(bytesPageListCount3);
+    const pageUsed3Ptr = m._malloc(bytesPageUsed3);
+    const pageTrunc3Ptr = m._malloc(bytesPageTrunc3);
+    const pageFlat3Ptr = m._malloc(bytesPageFlat3);
+
+    if (adjPtr === 0 || distPtr === 0 || pageIndex3Ptr === 0 || minDim3Ptr === 0 ||
+        smallest3Ptr === 0 || totalCount3Ptr === 0 || pageCount3Ptr === 0 ||
+        pageListCount3Ptr === 0 || pageUsed3Ptr === 0 || pageTrunc3Ptr === 0 ||
+        pageFlat3Ptr === 0) {
+        if (adjPtr) {
+            m._free(adjPtr);
+        }
+        if (distPtr) {
+            m._free(distPtr);
+        }
+        if (pageIndex3Ptr) {
+            m._free(pageIndex3Ptr);
+        }
+        if (minDim3Ptr) {
+            m._free(minDim3Ptr);
+        }
+        if (smallest3Ptr) {
+            m._free(smallest3Ptr);
+        }
+        if (totalCount3Ptr) {
+            m._free(totalCount3Ptr);
+        }
+        if (pageCount3Ptr) {
+            m._free(pageCount3Ptr);
+        }
+        if (pageListCount3Ptr) {
+            m._free(pageListCount3Ptr);
+        }
+        if (pageUsed3Ptr) {
+            m._free(pageUsed3Ptr);
+        }
+        if (pageTrunc3Ptr) {
+            m._free(pageTrunc3Ptr);
+        }
+        if (pageFlat3Ptr) {
+            m._free(pageFlat3Ptr);
+        }
+        throw new Error("wasmGraphResolvingSubsetsAllModesPaginatedWithNonResolvingSizeMinusOneFromDist: malloc failed");
+    }
+
+    try {
+        copyToHeap(HEAP32, a32, adjPtr / 4);
+        copyToHeap(HEAP32, d32, distPtr / 4);
+        const pageIndexBase = pageIndex3Ptr / 4;
+        HEAP32[pageIndexBase] = Math.max(0, pageIndexByMode[0] | 0);
+        HEAP32[pageIndexBase + 1] = Math.max(0, pageIndexByMode[1] | 0);
+        HEAP32[pageIndexBase + 2] = Math.max(0, pageIndexByMode[2] | 0);
+
+        const ok = m._wasm_graph_resolving_subsets_all_modes_paginated_with_non_resolving_size_minus_one_from_dist(
+            n,
+            adjPtr,
+            distPtr,
+            pageSize,
+            pageIndex3Ptr,
+            minDim3Ptr,
+            smallest3Ptr,
+            n,
+            totalCount3Ptr,
+            pageCount3Ptr,
+            pageListCount3Ptr,
+            pageUsed3Ptr,
+            pageFlat3Ptr,
+            pageListFlatMaxIntsPerMode,
+            pageTrunc3Ptr,
+        );
+        if (ok === 0) {
+            throw new Error("wasmGraphResolvingSubsetsAllModesPaginatedWithNonResolvingSizeMinusOneFromDist: wasm call failed");
+        }
+
+        const parseMode = (modeIdx: number): {
+            minDimension: number;
+            smallestBasis: number[];
+            totalCount: number;
+            pageCount: number;
+            subsets: number[][];
+            truncated: boolean;
+        } => {
+            const minDim = HEAP32[minDim3Ptr / 4 + modeIdx];
+            const smallestBasis: number[] = [];
+            const smallestBase = smallest3Ptr / 4 + modeIdx * n;
+            for (let i = 0; i < minDim; i++) {
+                smallestBasis.push(HEAP32[smallestBase + i]);
+            }
+            const totalCount = HEAP32[totalCount3Ptr / 4 + modeIdx];
+            const pageCount = HEAP32[pageCount3Ptr / 4 + modeIdx];
+            const usedInts = HEAP32[pageUsed3Ptr / 4 + modeIdx];
+            const truncated = HEAP32[pageTrunc3Ptr / 4 + modeIdx] !== 0;
+            const subsets: number[][] = [];
+            const flatBase = pageFlat3Ptr / 4 + modeIdx * pageListFlatMaxIntsPerMode;
+            let idx = 0;
+            while (idx < usedInts) {
+                const k = HEAP32[flatBase + idx];
+                idx++;
+                const subset: number[] = [];
+                for (let i = 0; i < k; i++) {
+                    subset.push(HEAP32[flatBase + idx]);
+                    idx++;
+                }
+                subsets.push(subset);
+            }
+            return { minDimension: minDim, smallestBasis, totalCount, pageCount, subsets, truncated };
+        };
+
+        return {
+            node: parseMode(0),
+            edge: parseMode(1),
+            mixed: parseMode(2),
+        };
+    } finally {
+        m._free(adjPtr);
+        m._free(distPtr);
+        m._free(pageIndex3Ptr);
+        m._free(minDim3Ptr);
+        m._free(smallest3Ptr);
+        m._free(totalCount3Ptr);
+        m._free(pageCount3Ptr);
+        m._free(pageListCount3Ptr);
+        m._free(pageUsed3Ptr);
+        m._free(pageTrunc3Ptr);
+        m._free(pageFlat3Ptr);
+    }
+}
+
+export type WasmGraphResolvingSubsetsPageModeResult = {
+    minDimension: number;
+    smallestBasis: number[];
+    totalCount: number;
+    pageCount: number;
+    subsets: number[][];
+    truncated: boolean;
+    minSizeSubsets: number[][];
+    minSizeTruncated: boolean;
+};
+
+export type WasmGraphResolvingSubsetsPageAllModesResult = {
+    node: WasmGraphResolvingSubsetsPageModeResult;
+    edge: WasmGraphResolvingSubsetsPageModeResult;
+    mixed: WasmGraphResolvingSubsetsPageModeResult;
+};
+
+export interface WasmGraphResolvingSubsetsCacheHandle {
+    setGraph(
+        adj01: readonly number[] | Int32Array,
+        distFlat: readonly number[] | Int32Array,
+        n: number,
+    ): void;
+    getPage(
+        pageSize: number,
+        pageIndexByMode: readonly [number, number, number],
+    ): WasmGraphResolvingSubsetsPageAllModesResult;
+    free(): void;
+}
+
+export function wasmGraphResolvingSubsetsCacheCreate(): WasmGraphResolvingSubsetsCacheHandle {
+    requireModuleFunctions(
+        "_wasm_graph_resolving_subsets_cache_create",
+        "_wasm_graph_resolving_subsets_cache_destroy",
+        "_wasm_graph_resolving_subsets_cache_set_graph",
+        "_wasm_graph_resolving_subsets_cache_get_page",
+        "_malloc",
+        "_free",
+    );
+    const m = moduleInstance as any;
+    const handle = m._wasm_graph_resolving_subsets_cache_create();
+    if (handle === 0) {
+        throw new Error("wasmGraphResolvingSubsetsCacheCreate: create failed");
+    }
+
+    let released = false;
+    let graphN = 0;
+
+    return {
+        setGraph(
+            adj01: readonly number[] | Int32Array,
+            distFlat: readonly number[] | Int32Array,
+            n: number,
+        ): void {
+            if (released) {
+                throw new Error("wasmGraphResolvingSubsetsCacheHandle: cache already freed");
+            }
+            const HEAP32 = getHeap32();
+            const a32 = toInt32Array(adj01);
+            const d32 = toInt32Array(distFlat);
+            const needed = n * n;
+            if (a32.length !== needed) {
+                throw new Error(`wasmGraphResolvingSubsetsCacheHandle.setGraph: expected ${needed} adjacency entries, got ${a32.length}`);
+            }
+            if (d32.length !== needed) {
+                throw new Error(`wasmGraphResolvingSubsetsCacheHandle.setGraph: expected ${needed} distance entries, got ${d32.length}`);
+            }
+
+            const bytes = needed * 4;
+            const adjPtr = m._malloc(bytes);
+            const distPtr = m._malloc(bytes);
+            if (adjPtr === 0 || distPtr === 0) {
+                if (adjPtr) {
+                    m._free(adjPtr);
+                }
+                if (distPtr) {
+                    m._free(distPtr);
+                }
+                throw new Error("wasmGraphResolvingSubsetsCacheHandle.setGraph: malloc failed");
+            }
+
+            try {
+                copyToHeap(HEAP32, a32, adjPtr / 4);
+                copyToHeap(HEAP32, d32, distPtr / 4);
+                const ok = m._wasm_graph_resolving_subsets_cache_set_graph(
+                    handle,
+                    n,
+                    adjPtr,
+                    distPtr,
+                );
+                if (ok === 0) {
+                    throw new Error("wasmGraphResolvingSubsetsCacheHandle.setGraph: wasm call failed");
+                }
+                graphN = n;
+            } finally {
+                m._free(adjPtr);
+                m._free(distPtr);
+            }
+        },
+
+        getPage(
+            pageSize: number,
+            pageIndexByMode: readonly [number, number, number],
+        ): WasmGraphResolvingSubsetsPageAllModesResult {
+            if (released) {
+                throw new Error("wasmGraphResolvingSubsetsCacheHandle: cache already freed");
+            }
+            if (graphN <= 0) {
+                throw new Error("wasmGraphResolvingSubsetsCacheHandle.getPage: setGraph must be called first");
+            }
+            if (pageSize < 0) {
+                pageSize = 0;
+            }
+
+            const HEAP32 = getHeap32();
+            const modeCount = 3;
+            const bytesPageIndex3 = modeCount * 4;
+            const bytesMinDim3 = modeCount * 4;
+            const bytesSmallest3 = modeCount * graphN * 4;
+            const bytesTotalCount3 = modeCount * 4;
+            const bytesPageCount3 = modeCount * 4;
+            const bytesPageListCount3 = modeCount * 4;
+            const bytesPageUsed3 = modeCount * 4;
+            const bytesPageTrunc3 = modeCount * 4;
+            const pageListFlatMaxIntsPerMode = Math.max(1, pageSize * (graphN + 1));
+            const bytesPageFlat3 = modeCount * pageListFlatMaxIntsPerMode * 4;
+            const minListFlatMaxIntsPerMode = Math.max(1, graphN * graphN * (graphN + 1));
+            const bytesMinListCount3 = modeCount * 4;
+            const bytesMinUsed3 = modeCount * 4;
+            const bytesMinTrunc3 = modeCount * 4;
+            const bytesMinFlat3 = modeCount * minListFlatMaxIntsPerMode * 4;
+
+            const pageIndex3Ptr = m._malloc(bytesPageIndex3);
+            const minDim3Ptr = m._malloc(bytesMinDim3);
+            const smallest3Ptr = m._malloc(bytesSmallest3);
+            const totalCount3Ptr = m._malloc(bytesTotalCount3);
+            const pageCount3Ptr = m._malloc(bytesPageCount3);
+            const pageListCount3Ptr = m._malloc(bytesPageListCount3);
+            const pageUsed3Ptr = m._malloc(bytesPageUsed3);
+            const pageTrunc3Ptr = m._malloc(bytesPageTrunc3);
+            const pageFlat3Ptr = m._malloc(bytesPageFlat3);
+            const minListCount3Ptr = m._malloc(bytesMinListCount3);
+            const minUsed3Ptr = m._malloc(bytesMinUsed3);
+            const minTrunc3Ptr = m._malloc(bytesMinTrunc3);
+            const minFlat3Ptr = m._malloc(bytesMinFlat3);
+
+            if (pageIndex3Ptr === 0 || minDim3Ptr === 0 || smallest3Ptr === 0 ||
+                totalCount3Ptr === 0 || pageCount3Ptr === 0 ||
+                pageListCount3Ptr === 0 || pageUsed3Ptr === 0 ||
+                pageTrunc3Ptr === 0 || pageFlat3Ptr === 0 ||
+                minListCount3Ptr === 0 || minUsed3Ptr === 0 ||
+                minTrunc3Ptr === 0 || minFlat3Ptr === 0) {
+                if (pageIndex3Ptr) {
+                    m._free(pageIndex3Ptr);
+                }
+                if (minDim3Ptr) {
+                    m._free(minDim3Ptr);
+                }
+                if (smallest3Ptr) {
+                    m._free(smallest3Ptr);
+                }
+                if (totalCount3Ptr) {
+                    m._free(totalCount3Ptr);
+                }
+                if (pageCount3Ptr) {
+                    m._free(pageCount3Ptr);
+                }
+                if (pageListCount3Ptr) {
+                    m._free(pageListCount3Ptr);
+                }
+                if (pageUsed3Ptr) {
+                    m._free(pageUsed3Ptr);
+                }
+                if (pageTrunc3Ptr) {
+                    m._free(pageTrunc3Ptr);
+                }
+                if (pageFlat3Ptr) {
+                    m._free(pageFlat3Ptr);
+                }
+                if (minListCount3Ptr) {
+                    m._free(minListCount3Ptr);
+                }
+                if (minUsed3Ptr) {
+                    m._free(minUsed3Ptr);
+                }
+                if (minTrunc3Ptr) {
+                    m._free(minTrunc3Ptr);
+                }
+                if (minFlat3Ptr) {
+                    m._free(minFlat3Ptr);
+                }
+                throw new Error("wasmGraphResolvingSubsetsCacheHandle.getPage: malloc failed");
+            }
+
+            try {
+                const pageIndexBase = pageIndex3Ptr / 4;
+                HEAP32[pageIndexBase] = Math.max(0, pageIndexByMode[0] | 0);
+                HEAP32[pageIndexBase + 1] = Math.max(0, pageIndexByMode[1] | 0);
+                HEAP32[pageIndexBase + 2] = Math.max(0, pageIndexByMode[2] | 0);
+
+                const ok = m._wasm_graph_resolving_subsets_cache_get_page(
+                    handle,
+                    pageSize,
+                    pageIndex3Ptr,
+                    minDim3Ptr,
+                    smallest3Ptr,
+                    graphN,
+                    totalCount3Ptr,
+                    pageCount3Ptr,
+                    pageListCount3Ptr,
+                    pageUsed3Ptr,
+                    pageFlat3Ptr,
+                    pageListFlatMaxIntsPerMode,
+                    pageTrunc3Ptr,
+                    minListCount3Ptr,
+                    minUsed3Ptr,
+                    minFlat3Ptr,
+                    minListFlatMaxIntsPerMode,
+                    minTrunc3Ptr,
+                );
+                if (ok === 0) {
+                    throw new Error("wasmGraphResolvingSubsetsCacheHandle.getPage: wasm call failed");
+                }
+
+                const parseMode = (modeIdx: number): WasmGraphResolvingSubsetsPageModeResult => {
+                    const minDim = HEAP32[minDim3Ptr / 4 + modeIdx];
+                    const smallestBasis: number[] = [];
+                    const smallestBase = smallest3Ptr / 4 + modeIdx * graphN;
+                    for (let i = 0; i < minDim; i++) {
+                        smallestBasis.push(HEAP32[smallestBase + i]);
+                    }
+                    const totalCount = HEAP32[totalCount3Ptr / 4 + modeIdx];
+                    const pageCount = HEAP32[pageCount3Ptr / 4 + modeIdx];
+                    const usedInts = HEAP32[pageUsed3Ptr / 4 + modeIdx];
+                    const truncated = HEAP32[pageTrunc3Ptr / 4 + modeIdx] !== 0;
+                    const subsets: number[][] = [];
+                    const flatBase = pageFlat3Ptr / 4 + modeIdx * pageListFlatMaxIntsPerMode;
+                    let idx = 0;
+                    while (idx < usedInts) {
+                        const k = HEAP32[flatBase + idx];
+                        idx++;
+                        const subset: number[] = [];
+                        for (let i = 0; i < k; i++) {
+                            subset.push(HEAP32[flatBase + idx]);
+                            idx++;
+                        }
+                        subsets.push(subset);
+                    }
+                    const minUsedInts = HEAP32[minUsed3Ptr / 4 + modeIdx];
+                    const minSizeTruncated = HEAP32[minTrunc3Ptr / 4 + modeIdx] !== 0;
+                    const minSizeSubsets: number[][] = [];
+                    const minFlatBase = minFlat3Ptr / 4 + modeIdx * minListFlatMaxIntsPerMode;
+                    let minIdx = 0;
+                    while (minIdx < minUsedInts) {
+                        const k = HEAP32[minFlatBase + minIdx];
+                        minIdx++;
+                        const subset: number[] = [];
+                        for (let i = 0; i < k; i++) {
+                            subset.push(HEAP32[minFlatBase + minIdx]);
+                            minIdx++;
+                        }
+                        minSizeSubsets.push(subset);
+                    }
+                    return {
+                        minDimension: minDim,
+                        smallestBasis,
+                        totalCount,
+                        pageCount,
+                        subsets,
+                        truncated,
+                        minSizeSubsets,
+                        minSizeTruncated,
+                    };
+                };
+
+                return {
+                    node: parseMode(0),
+                    edge: parseMode(1),
+                    mixed: parseMode(2),
+                };
+            } finally {
+                m._free(pageIndex3Ptr);
+                m._free(minDim3Ptr);
+                m._free(smallest3Ptr);
+                m._free(totalCount3Ptr);
+                m._free(pageCount3Ptr);
+                m._free(pageListCount3Ptr);
+                m._free(pageUsed3Ptr);
+                m._free(pageTrunc3Ptr);
+                m._free(pageFlat3Ptr);
+                m._free(minListCount3Ptr);
+                m._free(minUsed3Ptr);
+                m._free(minTrunc3Ptr);
+                m._free(minFlat3Ptr);
+            }
+        },
+
+        free(): void {
+            if (released) {
+                return;
+            }
+            m._wasm_graph_resolving_subsets_cache_destroy(handle);
+            released = true;
+            graphN = 0;
+        },
+    };
 }

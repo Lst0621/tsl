@@ -23,6 +23,7 @@ set(TSL_CORE_HEADERS
         src/graph/graph_distances.h
         src/graph/graph_generators.h
         src/graph/metric_dimension.h
+        src/scoped_timer.h
         src/helper.h
         src/lang_string.h
         src/modular_number.h
@@ -72,7 +73,7 @@ if(CMAKE_C_COMPILER MATCHES "emcc")
     )
 
     target_link_options(wasm_sample PRIVATE
-            -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_get_gl_n_zm,_wasm_is_matrix_group,_wasm_matrix_det,_wasm_matrix_inverse_mod,_gol_create,_gol_destroy,_gol_init,_gol_random_init,_gol_random_init_seed,_gol_get_seed,_gol_evolve,_gol_set_topology,_gol_get_live_cells,_lr_create,_lr_destroy,_lr_order,_lr_evaluate,_lr_characteristic_polynomial,_lr_transition_matrix_size,_lr_transition_matrix_data,_lr_evaluate_poly_at_matrix,_wasm_matrix_power,_wasm_matrix_times_const,_wasm_matrix_add,_bars_game_create,_bars_game_destroy,_bars_game_set_seed,_bars_game_init,_bars_game_get_state,_bars_game_get_future_state,_bars_game_apply_choice,_bars_game_is_ended,_bars_game_state_size,_bars_game_num_choices,_bars_game_min_val,_bars_game_max_val,_malloc,_free
+            -sEXPORTED_FUNCTIONS=_wasm_number_of_sequences,_wasm_number_of_sequences_all,_wasm_get_gl_n_zm_size,_wasm_get_gl_n_zm,_wasm_is_matrix_group,_wasm_matrix_det,_wasm_matrix_inverse_mod,_gol_create,_gol_destroy,_gol_init,_gol_random_init,_gol_random_init_seed,_gol_get_seed,_gol_evolve,_gol_set_topology,_gol_get_live_cells,_lr_create,_lr_destroy,_lr_order,_lr_evaluate,_lr_characteristic_polynomial,_lr_transition_matrix_size,_lr_transition_matrix_data,_lr_evaluate_poly_at_matrix,_wasm_matrix_power,_wasm_matrix_times_const,_wasm_matrix_add,_bars_game_create,_bars_game_destroy,_bars_game_set_seed,_bars_game_init,_bars_game_get_state,_bars_game_get_future_state,_bars_game_apply_choice,_bars_game_is_ended,_bars_game_state_size,_bars_game_num_choices,_bars_game_min_val,_bars_game_max_val,_wasm_graph_edge_count,_wasm_graph_randomize_undirected_adj01,_wasm_graph_all_pairs_bfs_distances,_wasm_graph_metric_dimension,_wasm_graph_resolving_subsets_from_dist,_wasm_graph_resolving_subsets_with_non_resolving_size_minus_one_from_dist,_wasm_graph_resolving_subsets_all_modes_with_non_resolving_size_minus_one_from_dist,_wasm_graph_resolving_subsets_all_modes_paginated_with_non_resolving_size_minus_one_from_dist,_wasm_graph_resolving_subsets_cache_create,_wasm_graph_resolving_subsets_cache_destroy,_wasm_graph_resolving_subsets_cache_set_graph,_wasm_graph_resolving_subsets_cache_get_page,_malloc,_free
     )
 endif()
 
