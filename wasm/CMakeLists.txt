@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 # Shared implementation sources compiled for each active toolchain/profile.
 set(TSL_CORE_SOURCES
         src/bars_game.cpp
+        src/big_int.cpp
         src/comb.cpp
         src/game_of_life.cpp
         src/lang_string.cpp
@@ -15,6 +16,7 @@ set(TSL_CORE_SOURCES
 
 set(TSL_CORE_HEADERS
         src/bars_game.h
+        src/big_int.h
         src/comb.h
         src/game_of_life.h
         src/graph/graph.h
@@ -94,6 +96,8 @@ if(NOT CMAKE_C_COMPILER MATCHES "emcc")
     # Create GoogleTest-based executable when sources exist.
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/gtest/polynomial_test_gtest.cpp")
         add_executable(tsl_core_tests
+                gtest/big_int_test_gtest.cpp
+                gtest/big_rational_test_gtest.cpp
                 gtest/polynomial_test_gtest.cpp
                 gtest/linear_recurrence_test_gtest.cpp
                 gtest/set_utils_test_gtest.cpp

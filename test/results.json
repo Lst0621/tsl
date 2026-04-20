@@ -26,7 +26,7 @@
     "unmatched": 0,
     "updated": 0
   },
-  "startTime": 1776059703777,
+  "startTime": 1776669403967,
   "success": true,
   "testResults": [
     {
@@ -35,7 +35,7 @@
           "ancestorTitles": [
             "GL(n, Z_m)"
           ],
-          "duration": 6,
+          "duration": 5,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -44,7 +44,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706679,
+          "startAt": 1776669406514,
           "status": "passed",
           "title": "|GL(2, Z_2)| = 6"
         },
@@ -52,7 +52,7 @@
           "ancestorTitles": [
             "GL(n, Z_m)"
           ],
-          "duration": 11,
+          "duration": 12,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -61,7 +61,7 @@
           "location": null,
           "numPassingAsserts": 49,
           "retryReasons": [],
-          "startAt": 1776059706850,
+          "startAt": 1776669406750,
           "status": "passed",
           "title": "|GL(2, Z_3)| = 48 and every element has an inverse"
         },
@@ -69,7 +69,7 @@
           "ancestorTitles": [
             "GL(n, Z_m)"
           ],
-          "duration": 147,
+          "duration": 215,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -78,7 +78,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706703,
+          "startAt": 1776669406535,
           "status": "passed",
           "title": "|GL(3, Z_2)| = 168 and forms a group"
         },
@@ -86,7 +86,7 @@
           "ancestorTitles": [
             "GL(n, Z_m)"
           ],
-          "duration": 67,
+          "duration": 108,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -95,7 +95,7 @@
           "location": null,
           "numPassingAsserts": 282,
           "retryReasons": [],
-          "startAt": 1776059706862,
+          "startAt": 1776669406762,
           "status": "passed",
           "title": "|GL(3, Z_3)| = 11232 and sampled inverses are correct"
         },
@@ -103,7 +103,7 @@
           "ancestorTitles": [
             "GL(n, Z_m)"
           ],
-          "duration": 17,
+          "duration": 16,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -112,7 +112,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706686,
+          "startAt": 1776669406519,
           "status": "passed",
           "title": "GL(2, Z_2) is closed under multiplication (forms a group)"
         },
@@ -120,7 +120,7 @@
           "ancestorTitles": [
             "primitive roots"
           ],
-          "duration": 34,
+          "duration": 54,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -129,15 +129,15 @@
           "location": null,
           "numPassingAsserts": 12,
           "retryReasons": [],
-          "startAt": 1776059706930,
+          "startAt": 1776669406870,
           "status": "passed",
           "title": "for n=2..10, each primitive root generates U(n)"
         }
       ],
-      "endTime": 1776059706965,
+      "endTime": 1776669406925,
       "message": "",
       "name": "/home/haojun/workspace/Lst0621.github.io/lib/tsl/test/group.test.ts",
-      "startTime": 1776059704359,
+      "startTime": 1776669404445,
       "status": "passed",
       "summary": ""
     },
@@ -147,7 +147,7 @@
           "ancestorTitles": [
             "inner_product"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -156,7 +156,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706586,
+          "startAt": 1776669406774,
           "status": "passed",
           "title": "[1,2] dot [3,4] = 11"
         },
@@ -173,7 +173,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706584,
+          "startAt": 1776669406772,
           "status": "passed",
           "title": "2x2 addition"
         },
@@ -190,7 +190,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706585,
+          "startAt": 1776669406773,
           "status": "passed",
           "title": "diagonal matrix with -1 is its own inverse"
         },
@@ -207,15 +207,15 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706577,
+          "startAt": 1776669406766,
           "status": "passed",
           "title": "2x2 multiplication"
         }
       ],
-      "endTime": 1776059706589,
+      "endTime": 1776669406776,
       "message": "",
       "name": "/home/haojun/workspace/Lst0621.github.io/lib/tsl/test/matrix.test.ts",
-      "startTime": 1776059704358,
+      "startTime": 1776669404559,
       "status": "passed",
       "summary": ""
     },
@@ -225,7 +225,7 @@
           "ancestorTitles": [
             "complex numbers"
           ],
-          "duration": 2,
+          "duration": 1,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -234,7 +234,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706680,
+          "startAt": 1776669406580,
           "status": "passed",
           "title": "(1+2i)(3+4i) = -5+10i"
         },
@@ -242,7 +242,7 @@
           "ancestorTitles": [
             "complex numbers"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -251,7 +251,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706682,
+          "startAt": 1776669406582,
           "status": "passed",
           "title": "(1+2i)*4 = 4+8i"
         },
@@ -259,7 +259,7 @@
           "ancestorTitles": [
             "complex numbers"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -268,7 +268,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706683,
+          "startAt": 1776669406583,
           "status": "passed",
           "title": "(1+2i)+(3+4i) = 4+6i"
         },
@@ -276,7 +276,7 @@
           "ancestorTitles": [
             "complex numbers"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -285,7 +285,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706684,
+          "startAt": 1776669406584,
           "status": "passed",
           "title": "conjugate of 1+2i is 1-2i"
         },
@@ -302,7 +302,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706686,
+          "startAt": 1776669406585,
           "status": "passed",
           "title": "inverse of 1 is 1+0i"
         },
@@ -319,7 +319,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706685,
+          "startAt": 1776669406584,
           "status": "passed",
           "title": "inverse of i is -i"
         },
@@ -327,7 +327,7 @@
           "ancestorTitles": [
             "modular arithmetic"
           ],
-          "duration": 9,
+          "duration": 5,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -336,7 +336,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706669,
+          "startAt": 1776669406572,
           "status": "passed",
           "title": "additive inverse mod 7: inv(0) = 0"
         },
@@ -353,7 +353,7 @@
           "location": null,
           "numPassingAsserts": 6,
           "retryReasons": [],
-          "startAt": 1776059706679,
+          "startAt": 1776669406578,
           "status": "passed",
           "title": "additive inverse mod 7: inv(i) = 7 - i for i in 1..6"
         },
@@ -370,15 +370,15 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706687,
+          "startAt": 1776669406586,
           "status": "passed",
           "title": "first 10 primes"
         }
       ],
-      "endTime": 1776059706690,
+      "endTime": 1776669406589,
       "message": "",
       "name": "/home/haojun/workspace/Lst0621.github.io/lib/tsl/test/number.test.ts",
-      "startTime": 1776059704379,
+      "startTime": 1776669404493,
       "status": "passed",
       "summary": ""
     },
@@ -388,7 +388,7 @@
           "ancestorTitles": [
             "poly_eval"
           ],
-          "duration": 5,
+          "duration": 6,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -397,26 +397,9 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706440,
+          "startAt": 1776669406520,
           "status": "passed",
           "title": "constant polynomial"
-        },
-        {
-          "ancestorTitles": [
-            "poly_eval"
-          ],
-          "duration": 0,
-          "failing": false,
-          "failureDetails": [],
-          "failureMessages": [],
-          "fullName": "poly_eval cubic polynomial at x=2",
-          "invocations": 1,
-          "location": null,
-          "numPassingAsserts": 1,
-          "retryReasons": [],
-          "startAt": 1776059706447,
-          "status": "passed",
-          "title": "cubic polynomial at x=2"
         },
         {
           "ancestorTitles": [
@@ -426,14 +409,14 @@
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
-          "fullName": "poly_eval empty polynomial returns 0",
+          "fullName": "poly_eval cubic polynomial at x=2",
           "invocations": 1,
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706448,
+          "startAt": 1776669406528,
           "status": "passed",
-          "title": "empty polynomial returns 0"
+          "title": "cubic polynomial at x=2"
         },
         {
           "ancestorTitles": [
@@ -443,12 +426,29 @@
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
+          "fullName": "poly_eval empty polynomial returns 0",
+          "invocations": 1,
+          "location": null,
+          "numPassingAsserts": 1,
+          "retryReasons": [],
+          "startAt": 1776669406532,
+          "status": "passed",
+          "title": "empty polynomial returns 0"
+        },
+        {
+          "ancestorTitles": [
+            "poly_eval"
+          ],
+          "duration": 1,
+          "failing": false,
+          "failureDetails": [],
+          "failureMessages": [],
           "fullName": "poly_eval evaluating at x=0 returns constant term",
           "invocations": 1,
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706447,
+          "startAt": 1776669406529,
           "status": "passed",
           "title": "evaluating at x=0 returns constant term"
         },
@@ -465,7 +465,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706447,
+          "startAt": 1776669406530,
           "status": "passed",
           "title": "evaluating at x=1 sums all coefficients"
         },
@@ -482,7 +482,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706446,
+          "startAt": 1776669406527,
           "status": "passed",
           "title": "linear polynomial"
         },
@@ -499,7 +499,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706448,
+          "startAt": 1776669406531,
           "status": "passed",
           "title": "negative coefficients"
         },
@@ -516,7 +516,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706446,
+          "startAt": 1776669406528,
           "status": "passed",
           "title": "quadratic polynomial"
         },
@@ -533,7 +533,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706453,
+          "startAt": 1776669406536,
           "status": "passed",
           "title": "quadratic in descending order"
         },
@@ -550,7 +550,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706452,
+          "startAt": 1776669406535,
           "status": "passed",
           "title": "coefficient of -1 shows minus sign only"
         },
@@ -567,26 +567,9 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706452,
+          "startAt": 1776669406535,
           "status": "passed",
           "title": "coefficient of 1 is implicit"
-        },
-        {
-          "ancestorTitles": [
-            "poly_to_latex_low_to_high"
-          ],
-          "duration": 1,
-          "failing": false,
-          "failureDetails": [],
-          "failureMessages": [],
-          "fullName": "poly_to_latex_low_to_high constant",
-          "invocations": 1,
-          "location": null,
-          "numPassingAsserts": 1,
-          "retryReasons": [],
-          "startAt": 1776059706449,
-          "status": "passed",
-          "title": "constant"
         },
         {
           "ancestorTitles": [
@@ -596,14 +579,14 @@
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
-          "fullName": "poly_to_latex_low_to_high linear",
+          "fullName": "poly_to_latex_low_to_high constant",
           "invocations": 1,
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706450,
+          "startAt": 1776669406534,
           "status": "passed",
-          "title": "linear"
+          "title": "constant"
         },
         {
           "ancestorTitles": [
@@ -613,12 +596,29 @@
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
+          "fullName": "poly_to_latex_low_to_high linear",
+          "invocations": 1,
+          "location": null,
+          "numPassingAsserts": 1,
+          "retryReasons": [],
+          "startAt": 1776669406534,
+          "status": "passed",
+          "title": "linear"
+        },
+        {
+          "ancestorTitles": [
+            "poly_to_latex_low_to_high"
+          ],
+          "duration": 0,
+          "failing": false,
+          "failureDetails": [],
+          "failureMessages": [],
           "fullName": "poly_to_latex_low_to_high negative leading coefficient",
           "invocations": 1,
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706450,
+          "startAt": 1776669406535,
           "status": "passed",
           "title": "negative leading coefficient"
         },
@@ -635,15 +635,15 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706449,
+          "startAt": 1776669406533,
           "status": "passed",
           "title": "zero polynomial"
         }
       ],
-      "endTime": 1776059706455,
+      "endTime": 1776669406539,
       "message": "",
       "name": "/home/haojun/workspace/Lst0621.github.io/lib/tsl/test/polynomial.test.ts",
-      "startTime": 1776059704293,
+      "startTime": 1776669404467,
       "status": "passed",
       "summary": ""
     },
@@ -653,7 +653,7 @@
           "ancestorTitles": [
             "cartesian_product"
           ],
-          "duration": 5,
+          "duration": 6,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -662,7 +662,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706363,
+          "startAt": 1776669406765,
           "status": "passed",
           "title": "{1,2} x {3,4}"
         },
@@ -670,7 +670,7 @@
           "ancestorTitles": [
             "endofunction"
           ],
-          "duration": 3,
+          "duration": 6,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -679,7 +679,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706416,
+          "startAt": 1776669406780,
           "status": "passed",
           "title": "identity endofunction forms a trivial group"
         },
@@ -696,7 +696,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706419,
+          "startAt": 1776669406787,
           "status": "passed",
           "title": "shift + swap generates S_4 (order 24)"
         },
@@ -713,7 +713,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706406,
+          "startAt": 1776669406775,
           "status": "passed",
           "title": "aperiodic with period 1"
         },
@@ -730,43 +730,9 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706370,
+          "startAt": 1776669406772,
           "status": "passed",
           "title": "generates 2^4 = 16 subsets"
-        },
-        {
-          "ancestorTitles": [
-            "set union semigroup"
-          ],
-          "duration": 2,
-          "failing": false,
-          "failureDetails": [],
-          "failureMessages": [],
-          "fullName": "set union semigroup highest idempotent power is 1",
-          "invocations": 1,
-          "location": null,
-          "numPassingAsserts": 1,
-          "retryReasons": [],
-          "startAt": 1776059706404,
-          "status": "passed",
-          "title": "highest idempotent power is 1"
-        },
-        {
-          "ancestorTitles": [
-            "set union semigroup"
-          ],
-          "duration": 8,
-          "failing": false,
-          "failureDetails": [],
-          "failureMessages": [],
-          "fullName": "set union semigroup identity element is the empty set",
-          "invocations": 1,
-          "location": null,
-          "numPassingAsserts": 2,
-          "retryReasons": [],
-          "startAt": 1776059706407,
-          "status": "passed",
-          "title": "identity element is the empty set"
         },
         {
           "ancestorTitles": [
@@ -776,12 +742,46 @@
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
+          "fullName": "set union semigroup highest idempotent power is 1",
+          "invocations": 1,
+          "location": null,
+          "numPassingAsserts": 1,
+          "retryReasons": [],
+          "startAt": 1776669406774,
+          "status": "passed",
+          "title": "highest idempotent power is 1"
+        },
+        {
+          "ancestorTitles": [
+            "set union semigroup"
+          ],
+          "duration": 5,
+          "failing": false,
+          "failureDetails": [],
+          "failureMessages": [],
+          "fullName": "set union semigroup identity element is the empty set",
+          "invocations": 1,
+          "location": null,
+          "numPassingAsserts": 2,
+          "retryReasons": [],
+          "startAt": 1776669406775,
+          "status": "passed",
+          "title": "identity element is the empty set"
+        },
+        {
+          "ancestorTitles": [
+            "set union semigroup"
+          ],
+          "duration": 0,
+          "failing": false,
+          "failureDetails": [],
+          "failureMessages": [],
           "fullName": "set union semigroup not definite",
           "invocations": 1,
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706403,
+          "startAt": 1776669406774,
           "status": "passed",
           "title": "not definite"
         },
@@ -789,7 +789,7 @@
           "ancestorTitles": [
             "set union semigroup"
           ],
-          "duration": 31,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -798,7 +798,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706371,
+          "startAt": 1776669406773,
           "status": "passed",
           "title": "union is abelian"
         },
@@ -815,15 +815,15 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706369,
+          "startAt": 1776669406771,
           "status": "passed",
           "title": "union is associative on generators"
         }
       ],
-      "endTime": 1776059706455,
+      "endTime": 1776669406823,
       "message": "",
       "name": "/home/haojun/workspace/Lst0621.github.io/lib/tsl/test/set.test.ts",
-      "startTime": 1776059704275,
+      "startTime": 1776669404564,
       "status": "passed",
       "summary": ""
     },
@@ -842,7 +842,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706704,
+          "startAt": 1776669406613,
           "status": "passed",
           "title": "definite k equals k"
         },
@@ -850,7 +850,7 @@
           "ancestorTitles": [
             "definite k-suffix semigroup"
           ],
-          "duration": 6,
+          "duration": 5,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -859,7 +859,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706697,
+          "startAt": 1776669406606,
           "status": "passed",
           "title": "highest idempotent power equals k"
         },
@@ -867,7 +867,7 @@
           "ancestorTitles": [
             "definite k-suffix semigroup"
           ],
-          "duration": 21,
+          "duration": 16,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -876,7 +876,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706716,
+          "startAt": 1776669406626,
           "status": "passed",
           "title": "no identity element (not a monoid)"
         },
@@ -884,7 +884,7 @@
           "ancestorTitles": [
             "definite k-suffix semigroup"
           ],
-          "duration": 31,
+          "duration": 28,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -893,7 +893,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706737,
+          "startAt": 1776669406643,
           "status": "passed",
           "title": "not a group"
         },
@@ -910,7 +910,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706715,
+          "startAt": 1776669406625,
           "status": "passed",
           "title": "not abelian"
         },
@@ -927,15 +927,15 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706703,
+          "startAt": 1776669406612,
           "status": "passed",
           "title": "number of idempotent elements is |alphabet|^k"
         }
       ],
-      "endTime": 1776059706769,
+      "endTime": 1776669406673,
       "message": "",
       "name": "/home/haojun/workspace/Lst0621.github.io/lib/tsl/test/string.test.ts",
-      "startTime": 1776059704359,
+      "startTime": 1776669404468,
       "status": "passed",
       "summary": ""
     },
@@ -954,7 +954,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706880,
+          "startAt": 1776669407569,
           "status": "passed",
           "title": "toFlatArray matches JS gen_general_linear_n_zm for GL(2, Z_2)"
         },
@@ -971,7 +971,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706878,
+          "startAt": 1776669407567,
           "status": "passed",
           "title": "toFlatArray matches JS gen_general_linear_n_zm for GL(2, Z_3)"
         },
@@ -979,7 +979,7 @@
           "ancestorTitles": [
             "wasm_get_gl_n_zm_size"
           ],
-          "duration": 19,
+          "duration": 9,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -988,7 +988,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706570,
+          "startAt": 1776669407394,
           "status": "passed",
           "title": "|GL(2, Z_2)| = 6"
         },
@@ -996,7 +996,7 @@
           "ancestorTitles": [
             "wasm_get_gl_n_zm_size"
           ],
-          "duration": 2,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1005,7 +1005,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706592,
+          "startAt": 1776669407405,
           "status": "passed",
           "title": "|GL(2, Z_3)| = 48"
         },
@@ -1022,7 +1022,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706589,
+          "startAt": 1776669407403,
           "status": "passed",
           "title": "|GL(3, Z_2)| = 168"
         },
@@ -1030,7 +1030,7 @@
           "ancestorTitles": [
             "wasm_get_gl_n_zm_size"
           ],
-          "duration": 74,
+          "duration": 15,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1039,7 +1039,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706594,
+          "startAt": 1776669407405,
           "status": "passed",
           "title": "|GL(3, Z_3)| = 11232"
         },
@@ -1047,7 +1047,7 @@
           "ancestorTitles": [
             "wasm_is_matrix_group (zero-copy)"
           ],
-          "duration": 2,
+          "duration": 1,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1056,7 +1056,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706668,
+          "startAt": 1776669407420,
           "status": "passed",
           "title": "GL(2, Z_2) = 6 forms a group"
         },
@@ -1073,7 +1073,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706874,
+          "startAt": 1776669407564,
           "status": "passed",
           "title": "GL(2, Z_3) = 48 forms a group"
         },
@@ -1081,7 +1081,7 @@
           "ancestorTitles": [
             "wasm_is_matrix_group (zero-copy)"
           ],
-          "duration": 204,
+          "duration": 143,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1090,7 +1090,7 @@
           "location": null,
           "numPassingAsserts": 2,
           "retryReasons": [],
-          "startAt": 1776059706670,
+          "startAt": 1776669407421,
           "status": "passed",
           "title": "GL(3, Z_2) = 168 forms a group"
         },
@@ -1098,7 +1098,7 @@
           "ancestorTitles": [
             "wasm_is_matrix_group (zero-copy)"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1107,7 +1107,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706877,
+          "startAt": 1776669407567,
           "status": "passed",
           "title": "removing one element breaks the group (JS array path)"
         },
@@ -1115,7 +1115,7 @@
           "ancestorTitles": [
             "wasm_matrix_det"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1124,7 +1124,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706880,
+          "startAt": 1776669407569,
           "status": "passed",
           "title": "2x2 determinant"
         },
@@ -1141,7 +1141,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706881,
+          "startAt": 1776669407569,
           "status": "passed",
           "title": "3x3 determinant"
         },
@@ -1149,7 +1149,7 @@
           "ancestorTitles": [
             "wasm_matrix_det"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1158,7 +1158,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706881,
+          "startAt": 1776669407570,
           "status": "passed",
           "title": "5x5 circulant matrix has non-zero determinant"
         },
@@ -1166,7 +1166,7 @@
           "ancestorTitles": [
             "wasm_matrix_det"
           ],
-          "duration": 11,
+          "duration": 7,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1175,7 +1175,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706882,
+          "startAt": 1776669407570,
           "status": "passed",
           "title": "throws on dimension mismatch"
         },
@@ -1192,7 +1192,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706894,
+          "startAt": 1776669407577,
           "status": "passed",
           "title": "2x2 inverse over Z_5: A * A^{-1} = I"
         },
@@ -1200,7 +1200,7 @@
           "ancestorTitles": [
             "wasm_matrix_inverse_mod"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1209,7 +1209,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706894,
+          "startAt": 1776669407577,
           "status": "passed",
           "title": "3x3 inverse over Z_7: A * A^{-1} = I"
         },
@@ -1217,7 +1217,7 @@
           "ancestorTitles": [
             "wasm_matrix_inverse_mod"
           ],
-          "duration": 5,
+          "duration": 4,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1226,7 +1226,7 @@
           "location": null,
           "numPassingAsserts": 48,
           "retryReasons": [],
-          "startAt": 1776059706895,
+          "startAt": 1776669407577,
           "status": "passed",
           "title": "all GL(2, Z_3) elements: WASM inverse matches JS inverse"
         },
@@ -1234,7 +1234,7 @@
           "ancestorTitles": [
             "wasm_matrix_inverse_mod"
           ],
-          "duration": 28,
+          "duration": 34,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1243,7 +1243,7 @@
           "location": null,
           "numPassingAsserts": 481,
           "retryReasons": [],
-          "startAt": 1776059706900,
+          "startAt": 1776669407581,
           "status": "passed",
           "title": "GL(2, Z_5): WASM and JS agree on all 480 inverses"
         },
@@ -1251,7 +1251,7 @@
           "ancestorTitles": [
             "wasm_matrix_inverse_mod"
           ],
-          "duration": 13,
+          "duration": 10,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1260,7 +1260,7 @@
           "location": null,
           "numPassingAsserts": 169,
           "retryReasons": [],
-          "startAt": 1776059706928,
+          "startAt": 1776669407615,
           "status": "passed",
           "title": "GL(3, Z_2): WASM inverse for all 168 matrices"
         },
@@ -1268,7 +1268,7 @@
           "ancestorTitles": [
             "wasm_matrix_inverse_mod"
           ],
-          "duration": 53,
+          "duration": 44,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1277,7 +1277,7 @@
           "location": null,
           "numPassingAsserts": 282,
           "retryReasons": [],
-          "startAt": 1776059706941,
+          "startAt": 1776669407626,
           "status": "passed",
           "title": "GL(3, Z_3): WASM sampled inverses (step=40), same as JS test"
         },
@@ -1285,7 +1285,7 @@
           "ancestorTitles": [
             "wasm_number_of_sequences"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1294,7 +1294,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706548,
+          "startAt": 1776669407388,
           "status": "passed",
           "title": "empty arr returns 0"
         },
@@ -1302,7 +1302,7 @@
           "ancestorTitles": [
             "wasm_number_of_sequences"
           ],
-          "duration": 1,
+          "duration": 0,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1311,7 +1311,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706549,
+          "startAt": 1776669407388,
           "status": "passed",
           "title": "empty seq returns 0"
         },
@@ -1319,7 +1319,7 @@
           "ancestorTitles": [
             "wasm_number_of_sequences"
           ],
-          "duration": 9,
+          "duration": 4,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1328,7 +1328,7 @@
           "location": null,
           "numPassingAsserts": 1,
           "retryReasons": [],
-          "startAt": 1776059706539,
+          "startAt": 1776669407384,
           "status": "passed",
           "title": "known result for [2,3,6,7,8] with [7,10]"
         },
@@ -1336,7 +1336,7 @@
           "ancestorTitles": [
             "wasm_number_of_sequences_all"
           ],
-          "duration": 17,
+          "duration": 5,
           "failing": false,
           "failureDetails": [],
           "failureMessages": [],
@@ -1345,7 +1345,7 @@
           "location": null,
           "numPassingAsserts": 88,
           "retryReasons": [],
-          "startAt": 1776059706552,
+          "startAt": 1776669407389,
           "status": "passed",
           "title": "all entries match individual wasm_number_of_sequences calls"
         },
@@ -1362,15 +1362,15 @@
           "location": null,
           "numPassingAsserts": 3,
           "retryReasons": [],
-          "startAt": 1776059706550,
+          "startAt": 1776669407388,
           "status": "passed",
           "title": "returns correct dimensions (8 x 11) for seq=[7,10]"
         }
       ],
-      "endTime": 1776059706996,
+      "endTime": 1776669407671,
       "message": "",
       "name": "/home/haojun/workspace/Lst0621.github.io/lib/tsl/test/wasm.test.ts",
-      "startTime": 1776059704257,
+      "startTime": 1776669404470,
       "status": "passed",
       "summary": ""
     }
