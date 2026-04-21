@@ -1,4 +1,4 @@
-import wasmSample from "./wasm/wasm_out_v1/wasm_sample.js";
+import wasmSample from "./wasm/wasm_out_v1/wasm_sample";
 let moduleInstance = null;
 /** In Node, fetch() cannot load file:// URLs, so we pass the WASM binary directly. */
 async function createModulePromise() {
