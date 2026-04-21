@@ -3,27 +3,49 @@ import type {WasmSampleModule} from "./wasm/wasm_out_v1/wasm_sample";
 
 let moduleInstance: WasmSampleModule | null = null;
 
-/** In Node, fetch() cannot load file:// URLs, so we pass the WASM binary directly. */
-async function createModulePromise(): Promise<WasmSampleModule> {
+function isNodeRuntime(): boolean {
     const g = typeof globalThis !== "undefined" ? globalThis : undefined;
     const proc = g && (g as { process?: { versions?: { node?: string } } }).process;
-    const inNode = typeof proc?.versions?.node === "string";
-    if (inNode) {
-        const nodeFs = "node:fs";
-        const nodeUrl = "node:url";
-        const nodePath = "node:path";
-        const fs = (await import(nodeFs)) as { readFileSync: (p: string) => Uint8Array };
-        const url = (await import(nodeUrl)) as { fileURLToPath: (u: URL | string) => string };
-        const path = (await import(nodePath)) as { dirname: (p: string) => string; join: (...p: string[]) => string };
-        const __filename = url.fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-        const wasmPath = path.join(__dirname, "wasm", "wasm_out_v1", "wasm_sample.wasm");
-        const wasmBinary = fs.readFileSync(wasmPath);
-        const mod = await wasmSample({ wasmBinary });
-        moduleInstance = mod;
-        return mod;
-    }
-    const mod = await wasmSample();
+    return typeof proc?.versions?.node === "string";
+}
+
+/**
+ * Node path: `fetch()` cannot load `file://` URLs, so read `wasm_sample.wasm`
+ * from disk and hand the bytes to Emscripten via `{ wasmBinary }`.
+ *
+ * The Emscripten loader is obtained via a string-variable dynamic import so
+ * Node's strict ESM resolver can append the required `.js` extension. esbuild
+ * does not analyze the dynamic specifier, so the browser bundle continues to
+ * rely on the static import at the top of this file (which the
+ * `wasm-external` build plugin rewrites to an external URL).
+ */
+async function loadWasmSampleInNode(): Promise<WasmSampleModule> {
+    const nodeFs = "node:fs";
+    const nodeUrl = "node:url";
+    const nodePath = "node:path";
+    const fs = (await import(nodeFs)) as { readFileSync: (p: string) => Uint8Array };
+    const url = (await import(nodeUrl)) as { fileURLToPath: (u: URL | string) => string };
+    const path = (await import(nodePath)) as { dirname: (p: string) => string; join: (...p: string[]) => string };
+    const nodeLoaderPath = "./wasm/wasm_out_v1/wasm_sample.js";
+    const { default: wasmSampleNode } = (await import(nodeLoaderPath)) as {
+        default: typeof wasmSample;
+    };
+    const __filename = url.fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const wasmPath = path.join(__dirname, "wasm", "wasm_out_v1", "wasm_sample.wasm");
+    const wasmBinary = fs.readFileSync(wasmPath);
+    return wasmSampleNode({ wasmBinary });
+}
+
+/** Browser path: Emscripten fetches `wasm_sample.wasm` itself, relative to `wasm_sample.js`. */
+async function loadWasmSampleInBrowser(): Promise<WasmSampleModule> {
+    return wasmSample();
+}
+
+async function createModulePromise(): Promise<WasmSampleModule> {
+    const mod = isNodeRuntime()
+        ? await loadWasmSampleInNode()
+        : await loadWasmSampleInBrowser();
     moduleInstance = mod;
     return mod;
 }
