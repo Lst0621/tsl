@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "lang_string.h"
-#include "modular_number.h"
-#include "semigroup.h"
+#include "algebra/semigroup.h"
+#include "number/modular_number.h"
+#include "string/lang_string.h"
 
 #include <algorithm>
 #include <string>

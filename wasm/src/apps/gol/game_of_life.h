@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "coordinate.h"
-#include "topology.h"
+#include "topology/coordinate.h"
+#include "topology/topology.h"
 
 /**
  * Topology mode for Game of Life grid.

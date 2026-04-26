@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "matrix.h"
-#include "modular_number.h"
+#include "algebra/matrix.h"
+#include "number/modular_number.h"
 
 /**
  * General Linear Group GL(n, m) - All invertible n×n matrices over Z_m

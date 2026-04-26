@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "general_linear_group.h"
-#include "matrix.h"
-#include "modular_number.h"
+#include "algebra/general_linear_group.h"
+#include "algebra/matrix.h"
+#include "number/modular_number.h"
 
 #include <vector>
 

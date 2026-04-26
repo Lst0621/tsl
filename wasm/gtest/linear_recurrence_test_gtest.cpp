@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "linear_recurrence.h"
+#include "algebra/linear_recurrence.h"
 
 TEST(LinearRecurrenceTest, FibonacciRecursiveAndMatrixMatch) {
     // Fibonacci: F(n) = F(n-1) + F(n-2), F(0)=0, F(1)=1

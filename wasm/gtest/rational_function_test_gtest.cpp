@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "polynomial.h"
-#include "rational_function.h"
-#include "sequence_ops.h"
+#include "algebra/polynomial.h"
+#include "algebra/rational_function.h"
+#include "algebra/sequence_ops.h"
 
 using R = LinearRecurrence::Coeff;
 

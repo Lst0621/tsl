@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include "algebra/semigroup.h"
 #include "graph/graph.h"
-#include "semigroup.h"
 
 inline Graph<int> path_graph(int n, bool directed = false) {
     if (n < 0) {

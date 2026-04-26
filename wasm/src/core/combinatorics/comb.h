@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "helper.h"
+#include "util/helper.h"
 int number_of_sequences(const std::vector<int>& arr,
                         const std::vector<int>& sums);
 

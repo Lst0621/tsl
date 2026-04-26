@@ -4,7 +4,7 @@
 #include <optional>
 #include <vector>
 
-#include "set_utils.h"
+#include "util/set_utils.h"
 
 /**
  * Generic semigroup generator template.

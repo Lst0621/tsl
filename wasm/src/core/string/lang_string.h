@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "semigroup.h"
-#include "set_utils.h"
+#include "algebra/semigroup.h"
+#include "util/set_utils.h"
 
 namespace lang {
 

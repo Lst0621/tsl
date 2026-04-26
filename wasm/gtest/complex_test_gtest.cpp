@@ -3,7 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 
-#include "complex.h"
+#include "number/complex.h"
 
 using CD = tsl::Complex<double>;
 using CF = tsl::Complex<float>;

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "small_vector.h"
+#include "util/small_vector.h"
 
 /**
  * Helper to detect if T has a default constructor

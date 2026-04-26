@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-#include "rational.h"
+#include "number/rational.h"
 
 TEST(RationalTest, DefaultCtorIsZeroOverOne) {
     tsl::Rational<int> r;

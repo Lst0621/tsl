@@ -6,7 +6,7 @@
 #include <concepts>
 #include <vector>
 
-#include "coordinate.h"
+#include "topology/coordinate.h"
 
 /**
  * Neighbor type enumeration

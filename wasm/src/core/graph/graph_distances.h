@@ -7,8 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "algebra/matrix.h"
 #include "graph/graph.h"
-#include "matrix.h"
 
 struct GraphDistances {
     Matrix<int> dist;

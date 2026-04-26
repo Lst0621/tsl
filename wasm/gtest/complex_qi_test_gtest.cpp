@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
-#include "complex.h"
-#include "polynomial.h"
-#include "rational_function.h"
-#include "sequence_ops.h"
+#include "algebra/polynomial.h"
+#include "algebra/rational_function.h"
+#include "algebra/sequence_ops.h"
+#include "number/complex.h"
 
 using R  = tsl::Rational<long long>;
 using QI = tsl::QI;  // Complex<Rational<long long>>

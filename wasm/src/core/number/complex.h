@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "matrix.h"
-#include "rational.h"
+#include "algebra/matrix.h"
+#include "number/rational.h"
 
 namespace tsl {
 

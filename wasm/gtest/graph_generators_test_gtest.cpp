@@ -2,7 +2,7 @@
 
 #include "graph/graph_generators.h"
 #include "graph/graph_utils.h"
-#include "modular_number.h"
+#include "number/modular_number.h"
 
 TEST(GraphGeneratorsTest, PathGraphUndirected) {
     Graph<int> g = path_graph(4, false);

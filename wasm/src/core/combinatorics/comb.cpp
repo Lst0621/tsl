@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "helper.h"
+#include "util/helper.h"
 
 // Recursive helper function that modifies seq in-place with memoization
 static int number_of_sequences_helper(

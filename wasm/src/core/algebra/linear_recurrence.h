@@ -3,10 +3,10 @@
 #include <stdexcept>
 #include <vector>
 
-#include "matrix.h"
-#include "polynomial.h"
-#include "rational.h"
-#include "semigroup.h"
+#include "algebra/matrix.h"
+#include "algebra/polynomial.h"
+#include "algebra/semigroup.h"
+#include "number/rational.h"
 
 /**
  * Generic linear recurrence over a coefficient field T.

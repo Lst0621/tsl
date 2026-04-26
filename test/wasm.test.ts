@@ -1,12 +1,14 @@
 import {
     wasm_number_of_sequences,
     wasm_number_of_sequences_all,
+} from "../wasm/ts/wasm_api_number_of_sequences";
+import {
     wasm_get_gl_n_zm_size,
     wasm_get_gl_n_zm,
     wasm_is_matrix_group,
     wasm_matrix_det,
     wasm_matrix_inverse_mod,
-} from "../wasm_api";
+} from "../wasm/ts/wasm_api_gl_matrix";
 import { gen_general_linear_n_zm } from "../math/group";
 import {
     matrix_inverse,

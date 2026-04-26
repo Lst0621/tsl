@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "lang_string.h"
+#include "string/lang_string.h"
 
 #include <algorithm>
 #include <string>

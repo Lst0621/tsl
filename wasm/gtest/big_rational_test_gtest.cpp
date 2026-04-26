@@ -2,8 +2,8 @@
 
 #include <stdexcept>
 
-#include "big_int.h"
-#include "rational.h"
+#include "number/big_int.h"
+#include "number/rational.h"
 
 using BigRational = tsl::Rational<BigInt>;
 

@@ -4,8 +4,8 @@
 #include <utility>
 #include <vector>
 
-#include "linear_recurrence.h"
-#include "polynomial.h"
+#include "algebra/linear_recurrence.h"
+#include "algebra/polynomial.h"
 
 template <typename T>
 struct RationalFunction {

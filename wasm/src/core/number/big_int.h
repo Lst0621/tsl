@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "rational.h"
+#include "number/rational.h"
 
 /**
  * Simple arbitrary-precision signed integer.

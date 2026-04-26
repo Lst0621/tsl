@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "comb.h"
-#include "polynomial.h"
+#include "combinatorics/comb.h"
+#include "algebra/polynomial.h"
 
 // Specialized traits for double with floating-point tolerance
 template <>

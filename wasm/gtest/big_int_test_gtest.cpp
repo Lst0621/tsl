@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "big_int.h"
+#include "number/big_int.h"
 
 TEST(BigIntTest, ParseAndToStringDecimal) {
     BigInt a = BigInt::from_string("0", 0);
