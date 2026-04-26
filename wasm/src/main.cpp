@@ -376,6 +376,36 @@ void gol_set_topology(void* handle, int mode) {
 }
 
 EMSCRIPTEN_KEEPALIVE
+void gol_set_wormhole_seed(void* handle, uint32_t seed) {
+    static_cast<GameOfLife*>(handle)->set_wormhole_seed(seed);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void gol_set_wormhole_count(void* handle, int count) {
+    static_cast<GameOfLife*>(handle)->set_wormhole_count(count);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int gol_get_wormhole_edges(void* handle) {
+    return static_cast<GameOfLife*>(handle)->debug_wormhole_edge_count();
+}
+
+EMSCRIPTEN_KEEPALIVE
+void gol_set_cut_seed(void* handle, uint32_t seed) {
+    static_cast<GameOfLife*>(handle)->set_cut_seed(seed);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void gol_set_cut_count(void* handle, int count) {
+    static_cast<GameOfLife*>(handle)->set_cut_count(count);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int gol_get_cut_edges(void* handle) {
+    return static_cast<GameOfLife*>(handle)->debug_cut_node_count();
+}
+
+EMSCRIPTEN_KEEPALIVE
 int gol_get_live_cells(void* handle, int* out_xy, int max_count) {
     std::vector<Coord2D> cells =
         static_cast<GameOfLife*>(handle)->get_live_cells();

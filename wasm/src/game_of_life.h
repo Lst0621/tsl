@@ -31,10 +31,21 @@ class GameOfLife {
     std::vector<Coord2D> get_live_cells() const;
 
     void set_topology(TopologyMode mode);
+    void set_wormhole_seed(uint32_t seed);
+    void set_wormhole_count(int count);
+    void set_cut_seed(uint32_t seed);
+    void set_cut_count(int count);
     TopologyMode topology() const;
+
+    // Debug/test helper.
+    int debug_wormhole_edge_count() const;
+    int debug_cut_node_count() const;
 
    private:
     int neighbor_count(int i, int j) const;
+    int flat_index(int i, int j) const;
+    void rebuild_wormholes();
+    void rebuild_cuts();
 
     int size_;
     std::vector<std::vector<int>> grid_;
@@ -43,4 +54,14 @@ class GameOfLife {
     Cylinder2D cylinder2d_;
     TopologyMode topo_;
     uint32_t last_seed_;
+
+    std::vector<std::vector<int>> wormholes_;
+    uint32_t wormhole_seed_;
+    int wormhole_target_count_;
+    int wormhole_edge_count_;
+
+    std::vector<std::uint8_t> cut_nodes_;
+    uint32_t cut_seed_;
+    int cut_target_count_;
+    int cut_node_count_;
 };
