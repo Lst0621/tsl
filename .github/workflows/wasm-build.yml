@@ -38,8 +38,7 @@ jobs:
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: latest
-          actions-cache-folder: emsdk-cache
-          cache-key: ${{ runner.os }}-emsdk-${{ hashFiles('wasm/CMakeLists.txt') }}
+          no-cache: true
 
       - name: Configure (CMake + emcc)
         run: |
