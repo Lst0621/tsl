@@ -1,0 +1,56 @@
+name: wasm-build
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "wasm/**"
+  pull_request:
+    paths:
+      - "wasm/**"
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake \
+            make \
+            python3
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+          cache: true
+
+      - name: Configure (CMake + emcc)
+        run: |
+          cmake -S wasm -B wasm/wasm_out_ci \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=emcc \
+            -DCMAKE_CXX_COMPILER=em++
+
+      - name: Build
+        run: |
+          cmake --build wasm/wasm_out_ci -j
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm_out_ci
+          if-no-files-found: error
+          path: |
+            wasm/wasm_out_ci/**/*.wasm
+            wasm/wasm_out_ci/**/*.js
