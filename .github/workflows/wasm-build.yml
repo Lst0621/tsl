@@ -1,6 +1,7 @@
 name: wasm-build
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
