@@ -3,6 +3,7 @@ name: wasm-build
 on:
   push:
     branches:
+      - main
       - master
     paths:
       - "wasm/**"
