@@ -1,5 +1,8 @@
 name: wasm-build
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
   push:
@@ -35,7 +38,8 @@ jobs:
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: latest
-          cache: true
+          actions-cache-folder: emsdk-cache
+          cache-key: ${{ runner.os }}-emsdk-${{ hashFiles('wasm/CMakeLists.txt') }}
 
       - name: Configure (CMake + emcc)
         run: |
