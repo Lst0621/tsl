@@ -16,7 +16,37 @@ export async function loadEmscriptenModule<T>(
     wasmRelativePathFromThisFile: string,
 ): Promise<T> {
     if (!isNodeRuntime()) {
-        return browserInit();
+        let onRuntimeInitializedResolve: (() => void) | null = null;
+        const onRuntimeInitializedPromise = new Promise<void>((resolve) => {
+            onRuntimeInitializedResolve = resolve;
+        });
+
+        const mod = await browserInit({
+            onRuntimeInitialized: () => {
+                if (onRuntimeInitializedResolve) {
+                    onRuntimeInitializedResolve();
+                }
+            },
+        } as any);
+
+        const maybeReady = (mod as any)?.ready;
+        if (maybeReady && typeof maybeReady.then === "function") {
+            await maybeReady;
+        }
+
+        const heap32 = (mod as any)?.HEAP32;
+        if (!heap32) {
+            await Promise.race([
+                onRuntimeInitializedPromise,
+                new Promise<void>((_, reject) => {
+                    setTimeout(() => {
+                        reject(new Error("Timed out waiting for Emscripten runtime initialization."));
+                    }, 5000);
+                }),
+            ]);
+        }
+
+        return mod;
     }
 
     const nodeFs = "node:fs";
@@ -34,6 +64,37 @@ export async function loadEmscriptenModule<T>(
     const __dirname = path.dirname(__filename);
     const wasmPath = path.join(__dirname, wasmRelativePathFromThisFile);
     const wasmBinary = fs.readFileSync(wasmPath);
-    return nodeInit({ wasmBinary });
+    let onRuntimeInitializedResolve: (() => void) | null = null;
+    const onRuntimeInitializedPromise = new Promise<void>((resolve) => {
+        onRuntimeInitializedResolve = resolve;
+    });
+
+    const mod = await nodeInit({
+        wasmBinary,
+        onRuntimeInitialized: () => {
+            if (onRuntimeInitializedResolve) {
+                onRuntimeInitializedResolve();
+            }
+        },
+    } as any);
+
+    const maybeReady = (mod as any)?.ready;
+    if (maybeReady && typeof maybeReady.then === "function") {
+        await maybeReady;
+    }
+
+    const heap32 = (mod as any)?.HEAP32;
+    if (!heap32) {
+        await Promise.race([
+            onRuntimeInitializedPromise,
+            new Promise<void>((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error("Timed out waiting for Emscripten runtime initialization."));
+                }, 5000);
+            }),
+        ]);
+    }
+
+    return mod;
 }
 
