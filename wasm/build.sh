@@ -9,8 +9,8 @@ cmake -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER=/usr/bin/emcc \
   -DCMAKE_CXX_COMPILER=/usr/bin/em++ \
   -S . \
-  -B wasm_out_v1
+  -B wasm_out_ci
 
 # Build using Emscripten make wrapper with parallel jobs
-cd wasm_out_v1 || exit 1
+cd wasm_out_ci || exit 1
 emmake make -j
