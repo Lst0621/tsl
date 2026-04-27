@@ -1,14 +1,14 @@
-import wasmBarsGame from "../wasm_out_v1/wasm_bars_game";
-import type { WasmBarsGameModule } from "../wasm_out_v1/wasm_bars_game";
+import wasmBarsGame from "../wasm_out_ci/wasm_bars_game";
 import { loadEmscriptenModule } from "./wasm_loader";
+import type { WasmBarsGameModule } from "./wasm_types";
 
 let moduleInstance: WasmBarsGameModule | null = null;
 
 export const modulePromise: Promise<WasmBarsGameModule> = (async () => {
     const mod = await loadEmscriptenModule<WasmBarsGameModule>(
         wasmBarsGame as any,
-        "../wasm_out_v1/wasm_bars_game.js",
-        "../wasm_out_v1/wasm_bars_game.wasm",
+        "../wasm_out_ci/wasm_bars_game.js",
+        "../wasm_out_ci/wasm_bars_game.wasm",
     );
     moduleInstance = mod;
     return mod;

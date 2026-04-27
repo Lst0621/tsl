@@ -1,14 +1,14 @@
-import wasmLinearRecur from "../wasm_out_v1/wasm_linear_recur";
-import type { WasmLinearRecurModule } from "../wasm_out_v1/wasm_linear_recur";
+import wasmLinearRecur from "../wasm_out_ci/wasm_linear_recur";
 import { loadEmscriptenModule } from "./wasm_loader";
+import type { WasmLinearRecurModule } from "./wasm_types";
 
 let moduleInstance: WasmLinearRecurModule | null = null;
 
 export const modulePromise: Promise<WasmLinearRecurModule> = (async () => {
     const mod = await loadEmscriptenModule<WasmLinearRecurModule>(
         wasmLinearRecur as any,
-        "../wasm_out_v1/wasm_linear_recur.js",
-        "../wasm_out_v1/wasm_linear_recur.wasm",
+        "../wasm_out_ci/wasm_linear_recur.js",
+        "../wasm_out_ci/wasm_linear_recur.wasm",
     );
     moduleInstance = mod;
     return mod;

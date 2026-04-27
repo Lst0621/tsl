@@ -1,14 +1,14 @@
-import wasmGraph from "../wasm_out_v1/wasm_graph";
-import type { WasmGraphModule } from "../wasm_out_v1/wasm_graph";
+import wasmGraph from "../wasm_out_ci/wasm_graph";
 import { loadEmscriptenModule } from "./wasm_loader";
+import type { WasmGraphModule } from "./wasm_types";
 
 let moduleInstance: WasmGraphModule | null = null;
 
 export const modulePromise: Promise<WasmGraphModule> = (async () => {
     const mod = await loadEmscriptenModule<WasmGraphModule>(
         wasmGraph as any,
-        "../wasm_out_v1/wasm_graph.js",
-        "../wasm_out_v1/wasm_graph.wasm",
+        "../wasm_out_ci/wasm_graph.js",
+        "../wasm_out_ci/wasm_graph.wasm",
     );
     moduleInstance = mod;
     return mod;

@@ -1,14 +1,14 @@
-import wasmSequences from "../wasm_out_v1/wasm_sequences";
-import type { WasmSequencesModule } from "../wasm_out_v1/wasm_sequences";
+import wasmSequences from "../wasm_out_ci/wasm_sequences";
 import { loadEmscriptenModule } from "./wasm_loader";
+import type { WasmSequencesModule } from "./wasm_types";
 
 let moduleInstance: WasmSequencesModule | null = null;
 
 export const modulePromise: Promise<WasmSequencesModule> = (async () => {
     const mod = await loadEmscriptenModule<WasmSequencesModule>(
         wasmSequences as any,
-        "../wasm_out_v1/wasm_sequences.js",
-        "../wasm_out_v1/wasm_sequences.wasm",
+        "../wasm_out_ci/wasm_sequences.js",
+        "../wasm_out_ci/wasm_sequences.wasm",
     );
     moduleInstance = mod;
     return mod;

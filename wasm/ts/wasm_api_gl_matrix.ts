@@ -1,14 +1,14 @@
-import wasmMatrix from "../wasm_out_v1/wasm_matrix";
-import type { WasmMatrixModule } from "../wasm_out_v1/wasm_matrix";
+import wasmMatrix from "../wasm_out_ci/wasm_matrix";
 import { loadEmscriptenModule } from "./wasm_loader";
+import type { WasmMatrixModule } from "./wasm_types";
 
 let moduleInstance: WasmMatrixModule | null = null;
 
 export const modulePromise: Promise<WasmMatrixModule> = (async () => {
     const mod = await loadEmscriptenModule<WasmMatrixModule>(
         wasmMatrix as any,
-        "../wasm_out_v1/wasm_matrix.js",
-        "../wasm_out_v1/wasm_matrix.wasm",
+        "../wasm_out_ci/wasm_matrix.js",
+        "../wasm_out_ci/wasm_matrix.wasm",
     );
     moduleInstance = mod;
     return mod;

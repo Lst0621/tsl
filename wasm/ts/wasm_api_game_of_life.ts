@@ -1,14 +1,14 @@
-import wasmGol from "../wasm_out_v1/wasm_gol";
-import type { WasmGolModule } from "../wasm_out_v1/wasm_gol";
+import wasmGol from "../wasm_out_ci/wasm_gol";
 import { loadEmscriptenModule } from "./wasm_loader";
+import type { WasmGolModule } from "./wasm_types";
 
 let moduleInstance: WasmGolModule | null = null;
 
 export const modulePromise: Promise<WasmGolModule> = (async () => {
     const mod = await loadEmscriptenModule<WasmGolModule>(
         wasmGol as any,
-        "../wasm_out_v1/wasm_gol.js",
-        "../wasm_out_v1/wasm_gol.wasm",
+        "../wasm_out_ci/wasm_gol.js",
+        "../wasm_out_ci/wasm_gol.wasm",
     );
     moduleInstance = mod;
     return mod;
