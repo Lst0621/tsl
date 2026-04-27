@@ -78,6 +78,7 @@ if(CMAKE_C_COMPILER MATCHES "emcc")
                 -sMODULARIZE=1
                 -sEXPORT_ES6=1
                 -sENVIRONMENT=web
+                -sEXPORTED_RUNTIME_METHODS=HEAP8,HEAPU8,HEAP16,HEAPU16,HEAP32,HEAPU32,HEAPF32,HEAPF64
                 -O1
         )
 
