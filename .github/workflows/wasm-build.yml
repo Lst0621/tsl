@@ -1,8 +1,5 @@
 name: wasm-build
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   workflow_dispatch:
   push:
@@ -24,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install build dependencies
         run: |
@@ -35,7 +32,7 @@ jobs:
             python3
 
       - name: Setup Emscripten
-        uses: mymindstorm/setup-emsdk@v14
+        uses: emscripten-core/setup-emsdk@v15
         with:
           version: latest
           no-cache: true
@@ -52,7 +49,7 @@ jobs:
           cmake --build wasm/wasm_out_ci -j
 
       - name: Upload WASM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wasm_out_ci
           if-no-files-found: error
